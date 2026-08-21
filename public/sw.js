@@ -5,7 +5,7 @@ const ASSETS_TO_CACHE = [
   './style.css',
   './firebase-config.js',
   './manifest.json',
-  '../data/polling_places.csv',
+  './polling_places.csv',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js',

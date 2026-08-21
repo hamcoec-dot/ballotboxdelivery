@@ -1,0 +1,1561 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notice of Polling Places - August&nbsp;6, 2026</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* CMS Reset to protect our card layout from global styles */
+        .card-layout-reset, .card-layout-reset * {
+            text-align: left !important;
+            box-sizing: border-box !important;
+            line-height: 1.5 !important;
+        }
+
+        /* Ensure cards break neatly across pages when printing */
+        @media print {
+            .print-break-inside-avoid { page-break-inside: avoid; }
+        }
+</style>
+<!-- Main Container -->
+<div class="card-layout-reset text-lg max-w-6xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-sm border border-gray-200 print:shadow-none print:border-none print:p-0">
+	
+	<!-- Header Information -->
+
+	<header class="mb-8 border-b border-gray-200 pb-6 print:border-b-2 print:border-black">
+	<h1 class="text-3xl md:text-5xl font-bold text-gray-900 mb-3">
+		Notice of Polling&nbsp;Places
+		</h1>
+	<p class="text-xl text-gray-800 font-semibold mb-2">State & Federal Primary and County General Election</p>
+	<p class="text-lg text-gray-700 mb-4 flex flex-col md:flex-row md:gap-8">
+		<span class="flex items-center gap-2 whitespace-nowrap">
+		<strong>Date:</strong> August 6, 2026
+                
+		
+		</span>
+		<span class="flex items-center gap-2 mt-2 md:mt-0">
+		<strong>Hours:</strong> 8:00 a.m. to 8:00 p.m. EST
+                
+		
+		</span>
+	</p>
+	<p class="text-base text-gray-600 italic">Pursuant to T.C.A. &sect;2-12-111(c)
+	</p>
+	</header>
+	
+	<!-- Search / Filter Section (Hidden on Print) -->
+
+	<main>
+	<section class="mb-8 print:hidden" aria-labelledby="search-heading">
+	<h2 id="search-heading" class="sr-only">
+		Search Polling&nbsp;Locations
+		</h2>
+	<div class="flex flex-col md:flex-row gap-4 items-end max-w-4xl">
+		<div class="relative flex-1 w-full">
+			<label for="search-input" class="block text-lg font-bold text-gray-800 mb-2">
+			Find your polling place (Search by precinct, name, or zip code)
+			</label>
+			<input type="text" id="search-input" class="block w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-lg leading-6 bg-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-blue-600 focus:border-blue-700 transition-colors" placeholder="e.g. Brainerd, 37421, or Baptist Church..." aria-controls="polling-list-body">
+		</div>
+		<button type="button" id="export-csv-btn" class="w-full md:w-auto bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-4 rounded-lg text-lg flex items-center justify-center gap-2 shadow-sm transition-colors focus:outline-none focus:ring-4 focus:ring-green-500" aria-label="Export polling places list to CSV (opens download)">
+			<span aria-hidden="true">&#x1F4E5;</span> Export&nbsp;CSV
+		</button>
+	</div>
+	
+	<!-- ARIA Live region for screen readers to announce search results -->
+	<div aria-live="polite" class="mt-3 text-base text-gray-700 font-medium" id="search-status">Showing all 79 polling locations.
+	</div>
+	</section>
+	
+	<!-- Polling Places Card Grid -->
+
+	
+	<!-- Using CSS Grid: 1 column on mobile/narrow spaces, 2 on medium, 3 on large wide spaces -->
+	<ul id="polling-list-body" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:block print:space-y-4" role="list">
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Airport A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Shepherd Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Shepherd%20Community%20Center%202124%20Shepherd%20Rd%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Shepherd Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			2124 Shepherd Rd, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Alton&nbsp;Park
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Bethlehem Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Bethlehem%20Center%20200%20W%2038th%20St%2C%20Chattanooga%20TN%2037410" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Bethlehem Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			200 W 38th St, Chattanooga TN 37410
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Apison A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Tri-Community Fire Station 3
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Tri-Community%20Fire%20Station%203%2011115%20Park%20Pl%2C%20Apison%20TN%2037302" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Tri-Community Fire Station 3 on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			11115 Park Pl, Apison TN 37302
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Avondale
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Avondale Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Avondale%20Community%20Center%201305%20Dodson%20Ave%2C%20Chattanooga%20TN%2037406" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Avondale Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1305 Dodson Ave, Chattanooga TN 37406
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Birchwood
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Birchwood Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Birchwood%20Community%20Center%205623%20Highway%2060%2C%20Birchwood%20TN%2037308" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Birchwood Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			5623 Highway 60, Birchwood TN 37308
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Bonny&nbsp;Oaks
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Washington Hills Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Washington%20Hills%20Community%20Center%204628%20Oakwood%20Dr%2C%20Chattanooga%20TN%2037416" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Washington Hills Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			4628 Oakwood Dr, Chattanooga TN 37416
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Brainerd
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Brainerd Crossroads (The BX)
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Brainerd%20Crossroads%20(The%20BX)%204011%20Austin%20St%2C%20Chattanooga%20TN%2037411" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Brainerd Crossroads (The BX) on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			4011 Austin St, Chattanooga TN 37411
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Brainerd&nbsp;Hills
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Alhambra Shrine Temple
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Alhambra%20Shrine%20Temple%201000%20Alhambra%20Dr%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Alhambra Shrine Temple on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1000 Alhambra Dr, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Bushtown
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Carver Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Carver%20Community%20Center%20600%20N%20Orchard%20Knob%20Ave%2C%20Chattanooga%20TN%2037404" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Carver Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			600 N Orchard Knob Ave, Chattanooga TN 37404
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Collegedale A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Chestnut Hall at the Commons
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Chestnut%20Hall%20at%20the%20Commons%204950%20Swinyar%20Dr%2C%20Collegedale%20TN%2037363" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Chestnut Hall at the Commons on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			4950 Swinyar Dr, Collegedale TN 37363
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Concord A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Concord Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Concord%20Baptist%20Church%207025%20E%20Brainerd%20Rd%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Concord Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			7025 E Brainerd Rd, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Courthouse
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Olivet Baptist
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Olivet%20Baptist%20740%20E%20Martin%20Luther%20King%20Blvd%2C%20Chattanooga%20TN%2037403" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Olivet Baptist on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			740 E Martin Luther King Blvd, Chattanooga TN 37403
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Dalewood
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			New Hope Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=New%20Hope%20Baptist%20Church%203777%20Wilcox%20Blvd%2C%20Chattanooga%20TN%2037411" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to New Hope Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			3777 Wilcox Blvd, Chattanooga TN 37411
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Dallas
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Sequoyah Baptist Tabernacle
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Sequoyah%20Baptist%20Tabernacle%208405%20Daisy%20Dallas%20Rd%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Sequoyah Baptist Tabernacle on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			8405 Daisy Dallas Rd, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Downtown
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Dogwood Manor Community Room
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Dogwood%20Manor%20Community%20Room%20959%20Gateway%20Ave%2C%20Chattanooga%20TN%2037402" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Dogwood Manor Community Room on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			959 Gateway Ave, Chattanooga TN 37402
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Dupont
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			The Gathering
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=The%20Gathering%204445%20Hixson%20Pike%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to The Gathering on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			4445 Hixson Pike, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		East Brainerd A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Covenant Presbyterian Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Covenant%20Presbyterian%20Church%208451%20E%20Brainerd%20Rd%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Covenant Presbyterian Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			8451 E Brainerd Rd, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		East&nbsp;Chattanooga
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			East Chattanooga Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=East%20Chattanooga%20Community%20Center%202409%20Dodson%20Ave%2C%20Chattanooga%20TN%2037406" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to East Chattanooga Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			2409 Dodson Ave, Chattanooga TN 37406
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		East&nbsp;Lake
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			East Lake Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=East%20Lake%20Community%20Center%203601%20Dodds%20Ave%2C%20Chattanooga%20TN%2037407" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to East Lake Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			3601 Dodds Ave, Chattanooga TN 37407
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		East Ridge&nbsp;A
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Greens Lake Church of Christ
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Greens%20Lake%20Church%20of%20Christ%201209%20Greens%20Lake%20Rd%2C%20East%20Ridge%20TN%2037412" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Greens Lake Church of Christ on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1209 Greens Lake Rd, East Ridge TN 37412
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		East&nbsp;Ridge&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			East Ridge Community Center (Gym)
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=East%20Ridge%20Community%20Center%20%28Gym%29%201515%20Tombras%20Ave%2C%20East%20Ridge%20TN%2037412" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to East Ridge Community Center (Gym) on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1515 Tombras Ave, East Ridge TN 37412
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		East&nbsp;Ridge&nbsp;C
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			East Ridge Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=East%20Ridge%20Community%20Center%201515%20Tombras%20Ave%2C%20East%20Ridge%20TN%2037412" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to East Ridge Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1515 Tombras Ave, East Ridge TN 37412
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		East Ridge&nbsp;D
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			East Ridge United Methodist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=East%20Ridge%20United%20Methodist%20Church%201601%20Prater%20Rd%2C%20Chattanooga%20TN%2037412" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to East Ridge United Methodist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1601 Prater Rd, Chattanooga TN 37412
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Eastgate
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Chris L. Ramsey Sr. Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Chris%20L.%20Ramsey%20Sr.%20Community%20Center%201010%20N%20Moore%20Rd%2C%20Chattanooga%20TN%2037411" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Chris L. Ramsey Sr. Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1010 N Moore Rd, Chattanooga TN 37411
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Eastside
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			New Life SDA Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=New%20Life%20SDA%20Church%202099%20E%20Main%20St%2C%20Chattanooga%20TN%2037404" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to New Life SDA Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			2099 E Main St, Chattanooga TN 37404
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Fairmount
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Bachman Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Bachman%20Community%20Center%202815%20Anderson%20Pike%2C%20Signal%20Mountain%20TN%2037377" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Bachman Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			2815 Anderson Pike, Signal Mountain TN 37377
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Falling Water A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Chattanooga Community Church of God
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Chattanooga%20Community%20Church%20of%20God%206528B%20Old%20Dayton%20Pike%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Chattanooga Community Church of God on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			6528B Old Dayton Pike, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Flat Top&nbsp;Mountain
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Flat Top Volunteer Fire Station
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Flat%20Top%20Volunteer%20Fire%20Station%2013331%20Jones%20Gap%20Rd%2C%20Soddy%20Daisy%20TN%2037379" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Flat Top Volunteer Fire Station on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			13331 Jones Gap Rd, Soddy Daisy TN 37379
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Ganns
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Middle Valley Church of God
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Middle%20Valley%20Church%20of%20God%201703%20Thrasher%20Pike%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Middle Valley Church of God on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1703 Thrasher Pike, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Glenwood
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Glenwood Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Glenwood%20Community%20Center%202610%20E%203rd%20St%2C%20Chattanooga%20TN%2037404" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Glenwood Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			2610 E 3rd St, Chattanooga TN 37404
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Harrison
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Harrison Ruritan Club
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Harrison%20Ruritan%20Club%205709%20Tyner%20Ln%2C%20Harrison%20TN%2037341" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Harrison Ruritan Club on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			5709 Tyner Ln, Harrison TN 37341
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Harrison&nbsp;Bay
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Greenwood Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Greenwood%20Baptist%20Church%208529%20Snow%20Hill%20Rd%2C%20Ooltewah%20TN%2037363" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Greenwood Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			8529 Snow Hill Rd, Ooltewah TN 37363
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Hixson
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Hixson Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Hixson%20Community%20Center%205401%20School%20Drive%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Hixson Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			5401 School Drive, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Hunter
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Church of the Highlands
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Church%20of%20the%20Highlands%206621%20Hunter%20Rd%2C%20Harrison%20TN%2037341" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Church of the Highlands on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			6621 Hunter Rd, Harrison TN 37341
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Hurricane&nbsp;Creek
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Christ United Methodist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Christ%20United%20Methodist%20Church%208645%20E%20Brainerd%20Rd%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Christ United Methodist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			8645 E Brainerd Rd, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Kingspoint
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Oakwood Baptist Church (Gym)
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Oakwood%20Baptist%20Church%20(Gym)%204501%20Bonny%20Oaks%20Dr%2C%20Chattanooga%20TN%2037416" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Oakwood Baptist Church (Gym) on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			4501 Bonny Oaks Dr, Chattanooga TN 37416
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Lake&nbsp;Hills
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Northminster Presbyterian Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Northminster%20Presbyterian%20Church%204791%20Hal%20Dr%2C%20Chattanooga%20TN%2037416" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Northminster Presbyterian Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			4791 Hal Dr, Chattanooga TN 37416
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Lakesite
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Lakesite City Hall
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Lakesite%20City%20Hall%209201%20Rocky%20Point%20Rd%2C%20Soddy%20Daisy%20TN%2037379" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Lakesite City Hall on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			9201 Rocky Point Rd, Soddy Daisy TN 37379
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Lookout&nbsp;Mountain
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Jane Harris Youth Building
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Jane%20Harris%20Youth%20Building%20301%20N%20Watauga%20Ln%2C%20Lookout%20Mountain%20TN%2037350" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Jane Harris Youth Building on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			301 N Watauga Ln, Lookout Mountain TN 37350
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Lookout&nbsp;Valley
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			John A Patten Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=John%20A%20Patten%20Community%20Center%203202%20Kellys%20Ferry%20Rd%2C%20Chattanooga%20TN%2037419" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to John A Patten Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			3202 Kellys Ferry Rd, Chattanooga TN 37419
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Lupton&nbsp;City
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Lupton Drive Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Lupton%20Drive%20Baptist%20Church%20859%20Lupton%20Dr%2C%20Chattanooga%20TN%2037415" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Lupton Drive Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			859 Lupton Dr, Chattanooga TN 37415
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Meadowview
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Maple Grove Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Maple%20Grove%20Baptist%20Church%209525%20Birchwood%20Pike%2C%20Harrison%20TN%2037341" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Maple Grove Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			9525 Birchwood Pike, Harrison TN 37341
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Middle&nbsp;Valley
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Middle Valley Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Middle%20Valley%20Baptist%20Church%207901%20Middle%20Valley%20Rd%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Middle Valley Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			7901 Middle Valley Rd, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Missionary&nbsp;Ridge
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Missionary Ridge Neighborhood Assoc
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Missionary%20Ridge%20Neighborhood%20Assoc%2036%20Sheridan%20Rd%2C%20Chattanooga%20TN%2037412" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Missionary Ridge Neighborhood Assoc on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			36 Sheridan Rd, Chattanooga TN 37412
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Mountain Creek A, B &&nbsp;C
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Mtn Creek Church of Christ
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Mtn%20Creek%20Church%20of%20Christ%20985%20Runyan%20Dr%2C%20Chattanooga%20TN%2037405" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Mtn Creek Church of Christ on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			985 Runyan Dr, Chattanooga TN 37405
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Mowbray A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Mowbray Volunteer Fire Station
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Mowbray%20Volunteer%20Fire%20Station%201705%20Mowbray%20Pike%2C%20Soddy%20Daisy%20TN%2037379" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Mowbray Volunteer Fire Station on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1705 Mowbray Pike, Soddy Daisy TN 37379
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Murray&nbsp;Hills
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Hamilton Life Church <span class="whitespace-nowrap">(Old Olivet Nation)</span>
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Hamilton%20Life%20Church%20(Old%20Olivet%20Nation)%204872%20Jersey%20Pike%2C%20Chattanooga%20TN%2037416" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Hamilton Life Church (Old Olivet Nation) on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			4872 Jersey Pike, Chattanooga TN 37416
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		North Chattanooga A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			North Chattanooga Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=North%20Chattanooga%20Community%20Center%20406%20May%20St%2C%20Chattanooga%20TN%2037405" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to North Chattanooga Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			406 May St, Chattanooga TN 37405
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Northgate
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Stuart Heights Baptist Church Hixson Campus
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Stuart%20Heights%20Baptist%20Church%20Hixson%20Campus%201505%20Cloverdale%20Dr%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Stuart Heights Baptist Church Hixson Campus on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1505 Cloverdale Dr, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Northshore
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Knights of Columbus
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Knights%20of%20Columbus%20313%20Sylvan%20St%2C%20Chattanooga%20TN%2037405" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Knights of Columbus on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			313 Sylvan St, Chattanooga TN 37405
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Northwoods
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Chattanooga Grace Church of the Nazarene
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Chattanooga%20Grace%20Church%20of%20the%20Nazarene%206310%20Dayton%20Blvd%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Chattanooga Grace Church of the Nazarene on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			6310 Dayton Blvd, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Ooltewah
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Seventh-Day Adventist Fellowship Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Seventh-Day%20Adventist%20Fellowship%20Center%206233%20Ooltewah%20Georgetown%20Rd%2C%20Ooltewah%20TN%2037363" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Seventh-Day Adventist Fellowship Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			6233 Ooltewah Georgetown Rd, Ooltewah TN 37363
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Ooltewah&nbsp;Georgetown
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Meadowview Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Meadowview%20Baptist%20Church%2010715%20Ooltewah%20Georgetown%20Rd%2C%20Georgetown%20TN%2037336" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Meadowview Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			10715 Ooltewah Georgetown Rd, Georgetown TN 37336
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Ooltewah&nbsp;Ringgold
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Church of Jesus Christ of Latter-Day Saints
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Church%20of%20Jesus%20Christ%20of%20Latter-Day%20Saints%203067%20Ooltewah%20Ringgold%20Rd%2C%20Ooltewah%20TN%2037363" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Church of Jesus Christ of Latter-Day Saints on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			3067 Ooltewah Ringgold Rd, Ooltewah TN 37363
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Pleasant Grove A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Pleasant Grove Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Pleasant%20Grove%20Baptist%20Church%207634%20Gann%20Rd%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Pleasant Grove Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			7634 Gann Rd, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Possum&nbsp;Creek
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Union Fork Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Union%20Fork%20Baptist%20Church%20350%20Lee%20Pike%2C%20Soddy%20Daisy%20TN%2037379" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Union Fork Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			350 Lee Pike, Soddy Daisy TN 37379
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Red Bank&nbsp;A
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Disabled American Veterans Chapter 6
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Disabled%20American%20Veterans%20Chapter%206%20619%20Memorial%20Dr%2C%20Chattanooga%20TN%2037415" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Disabled American Veterans Chapter 6 on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			619 Memorial Dr, Chattanooga TN 37415
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Red Bank&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Joe Glasscock Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Joe%20Glasscock%20Community%20Center%203653%20Tom%20Weathers%20Drive%2C%20Red%20Bank%20TN%2037415" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Joe Glasscock Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			3653 Tom Weathers Drive, Red Bank TN 37415
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Red Bank&nbsp;C
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Calvary Baptist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Calvary%20Baptist%20Church%205201%20Dayton%20Blvd%2C%20Chattanooga%20TN%2037415" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Calvary Baptist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			5201 Dayton Blvd, Chattanooga TN 37415
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Ridgedale
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			La Paz Chattanooga
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=La%20Paz%20Chattanooga%20809%20S.%20Willow%20St%2C%20Chattanooga%20TN%2037404" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to La Paz Chattanooga on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			809 S. Willow St, Chattanooga TN 37404
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Ridgeside
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Ridgeside Community Pool House
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Ridgeside%20Community%20Pool%20House%20300%20Shepherd%20Ave%2C%20Chattanooga%20TN%2037411" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Ridgeside Community Pool House on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			300 Shepherd Ave, Chattanooga TN 37411
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Riverview
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Northside Presbyterian Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Northside%20Presbyterian%20Church%20923%20Mississippi%20Ave%2C%20Chattanooga%20TN%2037405" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Northside Presbyterian Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			923 Mississippi Ave, Chattanooga TN 37405
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Sale&nbsp;Creek
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Sale Creek Fire Department
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Sale%20Creek%20Fire%20Department%2014828%20Dayton%20Pike%2C%20Sale%20Creek%20TN%2037373" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Sale Creek Fire Department on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			14828 Dayton Pike, Sale Creek TN 37373
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Savannah&nbsp;Bay
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Highway 58 Volunteer Fire Training Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Highway%2058%20Volunteer%20Fire%20Training%20Center%209108%20Snow%20Hill%20Rd%2C%20Ooltewah%20TN%2037363" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Highway 58 Volunteer Fire Training Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			9108 Snow Hill Rd, Ooltewah TN 37363
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Sequoyah
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Sequoyah Church of God
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Sequoyah%20Church%20of%20God%202007%20Frankie%20Lane%2C%20Soddy%20Daisy%20TN%2037379" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Sequoyah Church of God on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			2007 Frankie Lane, Soddy Daisy TN 37379
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Signal Mountain A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Signal Mountain Presbyterian Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Signal%20Mountain%20Presbyterian%20Church%20612%20James%20Blvd%2C%20Signal%20Mountain%20TN%2037377" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Signal Mountain Presbyterian Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			612 James Blvd, Signal Mountain TN 37377
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Silverdale
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Chattanooga First Seventh-Day Adventist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Chattanooga%20First%20Seventh-Day%20Adventist%20Church%207450%20Standifer%20Gap%20Rd%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Chattanooga First Seventh-Day Adventist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			7450 Standifer Gap Rd, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Soddy Daisy&nbsp;A
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Daisy Church of God (Gym)
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Daisy%20Church%20of%20God%20(Gym)%209555%20Dayton%20Pike%2C%20Soddy%20Daisy%20TN%2037379" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Daisy Church of God (Gym) on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			9555 Dayton Pike, Soddy Daisy TN 37379
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Soddy Daisy&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Stuart Heights Baptist Church Soddy Daisy Campus
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Stuart%20Heights%20Baptist%20Church%20Soddy%20Daisy%20Campus%2010049%20Dayton%20Pike%2C%20Soddy%20Daisy%20TN%2037379" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Stuart Heights Baptist Church Soddy Daisy Campus on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			10049 Dayton Pike, Soddy Daisy TN 37379
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Soddy Daisy&nbsp;C
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Soddy Daisy Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Soddy%20Daisy%20Community%20Center%20190%20Depot%20Street%2C%20Soddy%20Daisy%20TN%2037379" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Soddy Daisy Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			190 Depot Street, Soddy Daisy TN 37379
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		St&nbsp;Elmo
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			South Chatt Community Center
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=South%20Chatt%20Community%20Center%201151%20W%2040th%20St%2C%20Chattanooga%20TN%2037409" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to South Chatt Community Center on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1151 W 40th St, Chattanooga TN 37409
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Stuart&nbsp;Heights
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Rivermont Presbyterian Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Rivermont%20Presbyterian%20Church%203319%20Hixson%20Pike%2C%20Chattanooga%20TN%2037415" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Rivermont Presbyterian Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			3319 Hixson Pike, Chattanooga TN 37415
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Summit
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Chattanooga First Seventh-Day Adventist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Chattanooga%20First%20Seventh-Day%20Adventist%20Church%207450%20Standifer%20Gap%20Rd%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Chattanooga First Seventh-Day Adventist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			7450 Standifer Gap Rd, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Tyner
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Tyner Community Center (Gym)
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Tyner%20Community%20Center%20(Gym)%206900%20Ty%20Hi%20Dr%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Tyner Community Center (Gym) on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			6900 Ty Hi Dr, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Valleybrook
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Clear Creek Church of Christ
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Clear%20Creek%20Church%20of%20Christ%205612%20Hixson%20Pike%2C%20Hixson%20TN%2037343" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Clear Creek Church of Christ on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			5612 Hixson Pike, Hixson TN 37343
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Walden
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Walden Town Hall
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Walden%20Town%20Hall%201836%20Taft%20Hwy%2C%20Signal%20Mountain%20TN%2037377" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Walden Town Hall on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1836 Taft Hwy, Signal Mountain TN 37377
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Westview A &&nbsp;B
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Christ United Methodist Church
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Christ%20United%20Methodist%20Church%208645%20E%20Brainerd%20Rd%2C%20Chattanooga%20TN%2037421" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Christ United Methodist Church on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			8645 E Brainerd Rd, Chattanooga TN 37421
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Wolftever
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			Harrison Center (Old Harrison Elem.)
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=Harrison%20Center%20(Old%20Harrison%20Elem.)%205637%20Highway%2058%2C%20Harrison%20TN%2037341" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to Harrison Center (Old Harrison Elem.) on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			5637 Highway 58, Harrison TN 37341
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+		<li class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4">
+		<h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		Woodmore
+		</h3>
+		<div class="text-xl font-semibold text-gray-800 mb-2">
+			New Covenant Fellowship
+		</div>
+		<div>
+			<a href="https://maps.google.com/?q=New%20Covenant%20Fellowship%201326%20N%20Moore%20Rd%2C%20Chattanooga%20TN%2037411" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to New Covenant Fellowship on Google Maps (opens in new tab)">
+			<span class="flex items-start gap-2">
+			1326 N Moore Rd, Chattanooga TN 37411
+                               
+			</span>
+			</a>
+		</div>
+		</li>
+	</ul>
+	<div id="no-results" class="hidden text-center py-12 text-xl font-medium text-gray-600 print:hidden bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+		No polling places found matching your search criteria.
+	</div>
+	</main>
+	
+	<!-- Footer Information -->
+
+	<footer class="mt-12 pt-8 border-t-2 border-gray-200 text-base md:text-lg text-gray-800 print:mt-8 print:pt-4 print:border-t-4 print:border-black">
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+		<div>
+			<h2 class="font-bold text-gray-900 text-lg md:text-xl mb-3 uppercase tracking-wide">
+		Absentee & Provisional Counting&nbsp;Board
+		</h2>
+			<address class="not-italic leading-relaxed">
+			<strong>Election Commission</strong><br>
+			700 River Terminal Road<br>
+			Chattanooga, TN 37406
+                    
+			
+			</address>
+		</div>
+		<div>
+			<h2 class="font-bold text-gray-900 text-lg md:text-xl mb-3 uppercase tracking-wide">
+		Hamilton County Election&nbsp;Commission
+		</h2>
+			<ul class="space-y-2">
+				<li><strong>Michael S. Walden</strong>, Chairman</li>
+				<li><strong>Gene Shiles, Jr.</strong>, Secretary</li>
+				<li><strong>Ruth Braly</strong>, Commissioner</li>
+				<li><strong>Chris Clem</strong>, Commissioner</li>
+				<li><strong>Ardena Hicks</strong>, Commissioner</li>
+			</ul>
+		</div>
+	</div>
+	</footer>
+</div>
+<!-- Application Logic -->
+<script>        // Data derived directly from the provided source document
+        const pollingData = [
+            { precinct: "Airport A & B", location: "Shepherd Community Center", address: "2124 Shepherd Rd, Chattanooga TN 37421" },
+            { precinct: "Alton Park", location: "Bethlehem Center", address: "200 W 38th St, Chattanooga TN 37410" },
+            { precinct: "Apison A & B", location: "Tri-Community Fire Station 3", address: "11115 Park Pl, Apison TN 37302" },
+            { precinct: "Avondale", location: "Avondale Community Center", address: "1305 Dodson Ave, Chattanooga TN 37406" },
+            { precinct: "Birchwood", location: "Birchwood Community Center", address: "5623 Highway 60, Birchwood TN 37308" },
+            { precinct: "Bonny Oaks", location: "Washington Hills Community Center", address: "4628 Oakwood Dr, Chattanooga TN 37416" },
+            { precinct: "Brainerd", location: "Brainerd Crossroads (The BX)", address: "4011 Austin St, Chattanooga TN 37411" },
+            { precinct: "Brainerd Hills", location: "Alhambra Shrine Temple", address: "1000 Alhambra Dr, Chattanooga TN 37421" },
+            { precinct: "Bushtown", location: "Carver Community Center", address: "600 N Orchard Knob Ave, Chattanooga TN 37404" },
+            { precinct: "Collegedale A & B", location: "Chestnut Hall at the Commons", address: "4950 Swinyar Dr, Collegedale TN 37363" },
+            { precinct: "Concord A & B", location: "Concord Baptist Church", address: "7025 E Brainerd Rd, Chattanooga TN 37421" },
+            { precinct: "Courthouse", location: "Olivet Baptist", address: "740 E Martin Luther King Blvd, Chattanooga TN 37403" },
+            { precinct: "Dalewood", location: "New Hope Baptist Church", address: "3777 Wilcox Blvd, Chattanooga TN 37411" },
+            { precinct: "Dallas", location: "Sequoyah Baptist Tabernacle", address: "8405 Daisy Dallas Rd, Hixson TN 37343" },
+            { precinct: "Downtown", location: "Dogwood Manor Community Room", address: "959 Gateway Ave, Chattanooga TN 37402" },
+            { precinct: "Dupont", location: "The Gathering", address: "4445 Hixson Pike, Hixson TN 37343" },
+            { precinct: "East Brainerd A & B", location: "Covenant Presbyterian Church", address: "8451 E Brainerd Rd, Chattanooga TN 37421" },
+            { precinct: "East Chattanooga", location: "East Chattanooga Community Center", address: "2409 Dodson Ave, Chattanooga TN 37406" },
+            { precinct: "East Lake", location: "East Lake Community Center", address: "3601 Dodds Ave, Chattanooga TN 37407" },
+            { precinct: "East Ridge A", location: "Greens Lake Church of Christ", address: "1209 Greens Lake Rd, East Ridge TN 37412" },
+            { precinct: "East Ridge B", location: "East Ridge Community Center (Gym)", address: "1515 Tombras Ave, East Ridge TN 37412" },
+            { precinct: "East Ridge C", location: "East Ridge Community Center", address: "1515 Tombras Ave, East Ridge TN 37412" },
+            { precinct: "East Ridge D", location: "East Ridge United Methodist Church", address: "1601 Prater Rd, Chattanooga TN 37412" },
+            { precinct: "Eastgate", location: "Chris L. Ramsey Sr. Community Center", address: "1010 N Moore Rd, Chattanooga TN 37411" },
+            { precinct: "Eastside", location: "New Life SDA Church", address: "2099 E Main St, Chattanooga TN 37404" },
+            { precinct: "Fairmount", location: "Bachman Community Center", address: "2815 Anderson Pike, Signal Mountain TN 37377" },
+            { precinct: "Falling Water A & B", location: "Chattanooga Community Church of God", address: "6528B Old Dayton Pike, Hixson TN 37343" },
+            { precinct: "Flat Top Mountain", location: "Flat Top Volunteer Fire Station", address: "13331 Jones Gap Rd, Soddy Daisy TN 37379" },
+            { precinct: "Ganns", location: "Middle Valley Church of God", address: "1703 Thrasher Pike, Hixson TN 37343" },
+            { precinct: "Glenwood", location: "Glenwood Community Center", address: "2610 E 3rd St, Chattanooga TN 37404" },
+            { precinct: "Harrison", location: "Harrison Ruritan Club", address: "5709 Tyner Ln, Harrison TN 37341" },
+            { precinct: "Harrison Bay", location: "Greenwood Baptist Church", address: "8529 Snow Hill Rd, Ooltewah TN 37363" },
+            { precinct: "Hixson", location: "Hixson Community Center", address: "5401 School Drive, Hixson TN 37343" },
+            { precinct: "Hunter", location: "Church of the Highlands", address: "6621 Hunter Rd, Harrison TN 37341" },
+            { precinct: "Hurricane Creek", location: "Christ United Methodist Church", address: "8645 E Brainerd Rd, Chattanooga TN 37421" },
+            { precinct: "Kingspoint", location: "Oakwood Baptist Church (Gym)", address: "4501 Bonny Oaks Dr, Chattanooga TN 37416" },
+            { precinct: "Lake Hills", location: "Northminster Presbyterian Church", address: "4791 Hal Dr, Chattanooga TN 37416" },
+            { precinct: "Lakesite", location: "Lakesite City Hall", address: "9201 Rocky Point Rd, Soddy Daisy TN 37379" },
+            { precinct: "Lookout Mountain", location: "Jane Harris Youth Building", address: "301 N Watauga Ln, Lookout Mountain TN 37350" },
+            { precinct: "Lookout Valley", location: "John A Patten Community Center", address: "3202 Kellys Ferry Rd, Chattanooga TN 37419" },
+            { precinct: "Lupton City", location: "Lupton Drive Baptist Church", address: "859 Lupton Dr, Chattanooga TN 37415" },
+            { precinct: "Meadowview", location: "Maple Grove Baptist Church", address: "9525 Birchwood Pike, Harrison TN 37341" },
+            { precinct: "Middle Valley", location: "Middle Valley Baptist Church", address: "7901 Middle Valley Rd, Hixson TN 37343" },
+            { precinct: "Missionary Ridge", location: "Missionary Ridge Neighborhood Assoc", address: "36 Sheridan Rd, Chattanooga TN 37412" },
+            { precinct: "Mountain Creek A, B & C", location: "Mtn Creek Church of Christ", address: "985 Runyan Dr, Chattanooga TN 37405" },
+            { precinct: "Mowbray A & B", location: "Mowbray Volunteer Fire Station", address: "1705 Mowbray Pike, Soddy Daisy TN 37379" },
+            { precinct: "Murray Hills", location: "Hamilton Life Church (Old Olivet Nation)", address: "4872 Jersey Pike, Chattanooga TN 37416" },
+            { precinct: "North Chattanooga A & B", location: "North Chattanooga Community Center", address: "406 May St, Chattanooga TN 37405" },
+            { precinct: "Northgate", location: "Stuart Heights Baptist Church Hixson Campus", address: "1505 Cloverdale Dr, Hixson TN 37343" },
+            { precinct: "Northshore", location: "Knights of Columbus", address: "313 Sylvan St, Chattanooga TN 37405" },
+            { precinct: "Northwoods", location: "Chattanooga Grace Church of the Nazarene", address: "6310 Dayton Blvd, Hixson TN 37343" },
+            { precinct: "Ooltewah", location: "Seventh-Day Adventist Fellowship Center", address: "6233 Ooltewah Georgetown Rd, Ooltewah TN 37363" },
+            { precinct: "Ooltewah Georgetown", location: "Meadowview Baptist Church", address: "10715 Ooltewah Georgetown Rd, Georgetown TN 37336" },
+            { precinct: "Ooltewah Ringgold", location: "Church of Jesus Christ of Latter-Day Saints", address: "3067 Ooltewah Ringgold Rd, Ooltewah TN 37363" },
+            { precinct: "Pleasant Grove A & B", location: "Pleasant Grove Baptist Church", address: "7634 Gann Rd, Hixson TN 37343" },
+            { precinct: "Possum Creek", location: "Union Fork Baptist Church", address: "350 Lee Pike, Soddy Daisy TN 37379" },
+            { precinct: "Red Bank A", location: "Disabled American Veterans Chapter 6", address: "619 Memorial Dr, Chattanooga TN 37415" },
+            { precinct: "Red Bank B", location: "Joe Glasscock Community Center", address: "3653 Tom Weathers Drive, Red Bank TN 37415" },
+            { precinct: "Red Bank C", location: "Calvary Baptist Church", address: "5201 Dayton Blvd, Chattanooga TN 37415" },
+            { precinct: "Ridgedale", location: "La Paz Chattanooga", address: "809 S. Willow St, Chattanooga TN 37404" },
+            { precinct: "Ridgeside", location: "Ridgeside Community Pool House", address: "300 Shepherd Ave, Chattanooga TN 37411" },
+            { precinct: "Riverview", location: "Northside Presbyterian Church", address: "923 Mississippi Ave, Chattanooga TN 37405" },
+            { precinct: "Sale Creek", location: "Sale Creek Fire Department", address: "14828 Dayton Pike, Sale Creek TN 37373" },
+            { precinct: "Savannah Bay", location: "Highway 58 Volunteer Fire Training Center", address: "9108 Snow Hill Rd, Ooltewah TN 37363" },
+            { precinct: "Sequoyah", location: "Sequoyah Church of God", address: "2007 Frankie Lane, Soddy Daisy TN 37379" },
+            { precinct: "Signal Mountain A & B", location: "Signal Mountain Presbyterian Church", address: "612 James Blvd, Signal Mountain TN 37377" },
+            { precinct: "Silverdale", location: "Chattanooga First Seventh-Day Adventist Church", address: "7450 Standifer Gap Rd, Chattanooga TN 37421" },
+            { precinct: "Soddy Daisy A", location: "Daisy Church of God (Gym)", address: "9555 Dayton Pike, Soddy Daisy TN 37379" },
+            { precinct: "Soddy Daisy B", location: "Stuart Heights Baptist Church Soddy Daisy Campus", address: "10049 Dayton Pike, Soddy Daisy TN 37379" },
+            { precinct: "Soddy Daisy C", location: "Soddy Daisy Community Center", address: "190 Depot Street, Soddy Daisy TN 37379" },
+            { precinct: "St Elmo", location: "South Chatt Community Center", address: "1151 W 40th St, Chattanooga TN 37409" },
+            { precinct: "Stuart Heights", location: "Rivermont Presbyterian Church", address: "3319 Hixson Pike, Chattanooga TN 37415" },
+            { precinct: "Summit", location: "Chattanooga First Seventh-Day Adventist Church", address: "7450 Standifer Gap Rd, Chattanooga TN 37421" },
+            { precinct: "Tyner", location: "Tyner Community Center (Gym)", address: "6900 Ty Hi Dr, Chattanooga TN 37421" },
+            { precinct: "Valleybrook", location: "Clear Creek Church of Christ", address: "5612 Hixson Pike, Hixson TN 37343" },
+            { precinct: "Walden", location: "Walden Town Hall", address: "1836 Taft Hwy, Signal Mountain TN 37377" },
+            { precinct: "Westview A & B", location: "Christ United Methodist Church", address: "8645 E Brainerd Rd, Chattanooga TN 37421" },
+            { precinct: "Wolftever", location: "Harrison Center (Old Harrison Elem.)", address: "5637 Highway 58, Harrison TN 37341" },
+            { precinct: "Woodmore", location: "New Covenant Fellowship", address: "1326 N Moore Rd, Chattanooga TN 37411" }
+        ];
+
+        // Ensure alphabetical sorting by Precinct Name just in case
+        pollingData.sort((a, b) => a.precinct.localeCompare(b.precinct));
+
+        const listBody = document.getElementById('polling-list-body');
+        const searchInput = document.getElementById('search-input');
+        const noResultsMessage = document.getElementById('no-results');
+        const searchStatus = document.getElementById('search-status');
+
+        // Render List function (Card Layout)
+        function renderList(data) {
+            listBody.innerHTML = ''; // Clear current
+            
+            if (data.length === 0) {
+                listBody.classList.add('hidden');
+                noResultsMessage.classList.remove('hidden');
+            } else {
+                listBody.classList.remove('hidden');
+                noResultsMessage.classList.add('hidden');
+                
+                data.forEach(item => {
+                    const listItem = document.createElement('li');
+                    
+                    // Card Styling: White background, rounded corners, border, subtle shadow
+                    listItem.className = "bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 print-break-inside-avoid print:border-b print:border-l-0 print:border-r-0 print:border-t-0 print:border-gray-400 print:rounded-none print:shadow-none print:p-2 print:mb-4";
+                    
+                    // Create Maps Link securely
+                    const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(item.location + ' ' + item.address)}`;
+
+                    listItem.innerHTML = `
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+		${item.precinct}
+		</h3>
+                        <div class="text-xl font-semibold text-gray-800 mb-2">
+                            ${item.location}
+                        </div>
+                        <div>
+                            <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-block mt-1 text-xl text-blue-700 hover:text-blue-900 underline decoration-2 underline-offset-4 hover:decoration-blue-900 transition-colors print:text-black print:no-underline" aria-label="Get directions to ${item.location} on Google Maps (opens in new tab)">
+                               <span class="flex items-start gap-2">
+                                   
+                                   ${item.address}
+                               </span>
+                            </a>
+                        </div>
+                    `;
+                    listBody.appendChild(listItem);
+                });
+            }
+
+            // Update ARIA Live region for screen readers
+            if (data.length === pollingData.length) {
+                searchStatus.textContent = `Showing all ${data.length} polling locations.`;
+            } else {
+                searchStatus.textContent = `Showing ${data.length} resulting polling ${data.length === 1 ? 'location' : 'locations'}.`;
+            }
+        }
+
+        // Initialize list on load
+        renderList(pollingData);
+
+        // Add Event Listener for Search
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const filteredData = pollingData.filter(item => {
+                return item.precinct.toLowerCase().includes(query) ||
+                       item.location.toLowerCase().includes(query) ||
+                       item.address.toLowerCase().includes(query);
+            });
+            renderList(filteredData);
+        });
+
+        // Export to CSV functionality
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        exportCsvBtn.addEventListener('click', () => {
+            const query = searchInput.value.toLowerCase().trim();
+            const filteredData = pollingData.filter(item => {
+                return item.precinct.toLowerCase().includes(query) ||
+                       item.location.toLowerCase().includes(query) ||
+                       item.address.toLowerCase().includes(query);
+            });
+
+            let csvContent = "Precinct,Polling Place,Address,Google Maps Link\n";
+            filteredData.forEach(item => {
+                const precinct = item.precinct.replace(/"/g, '""');
+                const location = item.location.replace(/"/g, '""');
+                const address = item.address.replace(/"/g, '""');
+                const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(item.location + ' ' + item.address)}`;
+                csvContent += `"${precinct}","${location}","${address}","${mapUrl}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const filename = query ? `polling_places_filtered_${query.replace(/[^a-z0-9]/gi, '_')}.csv` : 'polling_places_august_2026.csv';
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+</script>
