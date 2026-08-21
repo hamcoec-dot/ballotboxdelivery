@@ -28,9 +28,9 @@ The application is linked to Firebase project **`ballotboxdelivery`**:
 2. **Authentication:**
    - Go to **Build -> Authentication -> Sign-in method**.
    - Enable **Email/Password**.
-   - Go to **Users -> Add User**:
-     - Create driver account (e.g. `driver@hcec.local`)
-     - Create admin account (e.g. `admin@hcec.local`)
+    - Go to **Users -> Add User**:
+     - Create delivery driver account (e.g. `driver@yourdomain.gov`)
+     - Create admin account (e.g. `admin@yourdomain.gov`)
 3. **Firestore Database:**
    - Go to **Build -> Firestore Database -> Rules**.
    - Paste the following security rules and click **Publish**:
@@ -42,7 +42,7 @@ service cloud.firestore {
     match /deliveries/{deliveryId} {
       allow create: if request.auth != null;
       allow read: if request.auth != null;
-      allow update, delete: if request.auth.token.email == 'admin@hcec.local';
+      allow update, delete: if request.auth != null && request.auth.token.email.matches('.*admin.*');
     }
   }
 }
