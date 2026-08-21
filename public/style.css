@@ -1,0 +1,303 @@
+/* Hamilton County Election Commission - Delivery & Chain of Custody App Stylesheet */
+
+:root {
+  --primary-color: #1e3a8a;
+  --primary-hover: #1e40af;
+  --secondary-color: #0f172a;
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --text-color: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #cbd5e1;
+  --success-color: #15803d;
+  --success-bg: #dcfce7;
+  --warning-color: #b45309;
+  --warning-bg: #fef3c7;
+  --danger-color: #b91c1c;
+  --danger-bg: #fee2e2;
+  --focus-ring: #2563eb;
+}
+
+* {
+  box-sizing: border-box !important;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  color: var(--text-color) !important;
+  background-color: var(--bg-color) !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Header & Navigation */
+.header-bar {
+  background-color: var(--primary-color) !important;
+  color: #ffffff !important;
+  padding: 16px 24px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.header-title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.user-badge {
+  font-size: 14px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* Main Layout & Views */
+.container {
+  max-width: 900px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 24px 16px !important;
+  flex: 1 1 auto !important;
+}
+
+.view-section {
+  display: none;
+}
+
+.view-section.active {
+  display: block !important;
+}
+
+/* Cards & Containers */
+.card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  padding: 24px !important;
+  margin-bottom: 24px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.card-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  margin-bottom: 16px !important;
+  color: var(--primary-color) !important;
+  border-bottom: 2px solid var(--bg-color) !important;
+  padding-bottom: 8px !important;
+}
+
+/* Fluid Flex Grid */
+.flex-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+}
+
+.flex-card {
+  flex: 1 1 280px !important;
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  cursor: pointer !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.flex-card:hover, .flex-card:focus-within {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Touch Targets & Form Inputs */
+.form-group {
+  margin-bottom: 20px !important;
+}
+
+label {
+  display: block !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+  color: var(--text-color) !important;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  width: 100% !important;
+  padding: 14px 16px !important;
+  font-size: 16px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  background-color: #ffffff !important;
+  color: var(--text-color) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 3px solid var(--focus-ring) !important;
+  outline-offset: 1px !important;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block !important;
+  width: 100% !important;
+  padding: 16px 24px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  color: #ffffff !important;
+  background-color: var(--primary-color) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s !important;
+  text-decoration: none !important;
+}
+
+.btn:hover, .btn:focus {
+  background-color: var(--primary-hover) !important;
+  outline: 3px solid var(--focus-ring) !important;
+}
+
+.btn-secondary {
+  background-color: #475569 !important;
+}
+
+.btn-secondary:hover {
+  background-color: #334155 !important;
+}
+
+.btn-outline {
+  background-color: transparent !important;
+  color: var(--primary-color) !important;
+  border: 2px solid var(--primary-color) !important;
+}
+
+.btn-outline:hover {
+  background-color: rgba(30, 58, 138, 0.05) !important;
+}
+
+.btn-small {
+  width: auto !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+}
+
+/* Status Banners */
+.alert {
+  padding: 16px !important;
+  border-radius: 6px !important;
+  margin-bottom: 20px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.alert-success {
+  background-color: var(--success-bg) !important;
+  color: var(--success-color) !important;
+  border: 1px solid var(--success-color) !important;
+}
+
+.alert-warning {
+  background-color: var(--warning-bg) !important;
+  color: var(--warning-color) !important;
+  border: 1px solid var(--warning-color) !important;
+}
+
+.alert-danger {
+  background-color: var(--danger-bg) !important;
+  color: var(--danger-color) !important;
+  border: 1px solid var(--danger-color) !important;
+}
+
+/* Camera & Scanner Frame */
+#reader {
+  width: 100% !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 2px solid var(--primary-color) !important;
+  background: #000000 !important;
+}
+
+.photo-preview-box {
+  margin-top: 12px !important;
+  text-align: center !important;
+}
+
+.photo-preview-img {
+  max-width: 100% !important;
+  max-height: 250px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* Tables & Horizontal Scroll */
+.table-responsive {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  margin-bottom: 16px !important;
+}
+
+table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  text-align: left !important;
+}
+
+th, td {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+th {
+  background-color: #f1f5f9 !important;
+  font-weight: 700 !important;
+  color: var(--primary-color) !important;
+}
+
+tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Maps Link */
+.map-link {
+  color: var(--primary-color) !important;
+  text-decoration: underline !important;
+  font-weight: 600 !important;
+}
+
+/* Print Optimization */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .header-bar, .btn, .no-print {
+    display: none !important;
+  }
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    break-inside: avoid !important;
+  }
+}

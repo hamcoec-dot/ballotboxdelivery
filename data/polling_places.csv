@@ -1,0 +1,5 @@
+election_id,election_name,election_date,precinct,location_name,address,expected_barcode
+2026-08,August 2026 General,2026-08-06,01,Brainerd Recreation Center,1010 N Moore Rd Chattanooga TN 37411,SEAL-A001-2026
+2026-08,August 2026 General,2026-08-06,02,East Lake Community Center,3814 Tom Weiss Dr Chattanooga TN 37407,SEAL-A002-2026
+2026-08,August 2026 General,2026-08-06,03,Northgate Community Center,4301 W Ridge Rd Chattanooga TN 37415,SEAL-A003-2026
+2026-08,August 2026 General,2026-08-06,04,Hixson Community Center,5401 School Dr Hixson TN 37343,SEAL-A004-2026

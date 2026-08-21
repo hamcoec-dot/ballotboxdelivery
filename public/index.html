@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hamilton County Election Commission — Ballot Box Chain of Custody</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e3a8a">
+
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+  <!-- HTML5 QR Code Scanner CDN -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+
+  <!-- Header Bar -->
+  <header class="header-bar">
+    <div class="header-title">
+      <span aria-hidden="true">&#x1F5F3;&#xFE0F;</span>
+      <span>HCEC Chain of Custody</span>
+    </div>
+    <div id="userBadge" class="user-badge" style="display: none;">
+      <span id="userEmailText">driver@hcec.local</span>
+      <button type="button" class="btn btn-small btn-outline" style="color: #ffffff !important; border-color: #ffffff !important;" onclick="appLogout()" aria-label="Sign out of account">
+        Sign Out
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- VIEW 1: LOGIN VIEW -->
+    <section id="viewLogin" class="view-section active">
+      <div class="card">
+        <h1 class="card-title">Delivery Driver &amp; Admin Sign In</h1>
+        <div id="loginAlert" class="alert alert-danger" style="display: none;" role="alert"></div>
+
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" placeholder="user@hamiltontn.gov" autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){appLogin();}">
+        </div>
+
+        <button type="button" class="btn" onclick="appLogin()" aria-label="Sign into ballot box custody app">
+          Sign In
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW 2: ELECTION SELECTION -->
+    <section id="viewElections" class="view-section">
+      <div class="card">
+        <h2 class="card-title">Select Active Election</h2>
+        <p style="margin-bottom: 16px;">Choose the current election to view authorized delivery locations.</p>
+        <div id="electionsList" class="flex-grid">
+          <!-- Dynamically populated from CSV -->
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: POLLING PLACE SELECTION -->
+    <section id="viewPollingPlaces" class="view-section">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+          <h2 class="card-title" style="margin-bottom: 0 !important;">Select Polling Place</h2>
+          <button type="button" class="btn btn-small btn-secondary" onclick="showView('viewElections')" aria-label="Back to election selection">
+            &larr; Back to Elections
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="pollingSearch">Search Polling Place or Precinct</label>
+          <input type="text" id="pollingSearch" placeholder="Type precinct number, name, or address..." onkeyup="filterPollingPlaces()">
+        </div>
+
+        <div id="pollingPlacesList" class="flex-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: DELIVERY WORKFLOW -->
+    <section id="viewDelivery" class="view-section">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <h2 id="deliveryLocationName" class="card-title" style="margin-bottom: 4px !important;">Brainerd Recreation Center</h2>
+            <p id="deliveryLocationAddress" style="font-size: 14px; color: var(--text-muted);"></p>
+          </div>
+          <button type="button" class="btn btn-small btn-secondary" onclick="showView('viewPollingPlaces')" aria-label="Back to polling place list">
+            &larr; Change Location
+          </button>
+        </div>
+
+        <div id="deliveryAlert" class="alert" style="display: none;" role="alert"></div>
+
+        <!-- Section A: Barcode Scan -->
+        <div style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 1: Scan Ballot Box Seal Barcode</h3>
+          
+          <div id="reader" style="display: none; margin-bottom: 16px;"></div>
+
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+            <button type="button" id="btnStartScan" class="btn" onclick="startBarcodeScanner()" aria-label="Open camera to scan seal barcode">
+              <span aria-hidden="true">&#x1F4F7;</span> Open Barcode Scanner
+            </button>
+            <button type="button" id="btnStopScan" class="btn btn-secondary" onclick="stopBarcodeScanner()" style="display: none;" aria-label="Stop barcode camera scanner">
+              Stop Scanner
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label for="scannedBarcode">Scanned / Manual Barcode Entry</label>
+            <input type="text" id="scannedBarcode" placeholder="e.g. SEAL-A001-2026" onkeyup="verifyBarcodeMatch()" onchange="verifyBarcodeMatch()">
+          </div>
+
+          <div id="barcodeMatchStatus" class="alert alert-warning" style="display: none;">
+            <!-- Verification result -->
+          </div>
+        </div>
+
+        <!-- Section B: Delivery Photo -->
+        <div style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 2: Take Delivery Photo</h3>
+          <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">Capture a photo showing the seal and machine delivered at location.</p>
+          
+          <input type="file" id="photoInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoCaptured(event)">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('photoInput').click()" aria-label="Take delivery photograph with camera">
+            <span aria-hidden="true">&#x1F4F7;</span> Take Photo
+          </button>
+
+          <div id="photoPreviewBox" class="photo-preview-box" style="display: none;">
+            <img id="photoPreviewImg" class="photo-preview-img" alt="Captured delivery photo preview">
+            <p style="font-size: 13px; color: var(--success-color); margin-top: 4px;">&#x2705; Photo attached</p>
+          </div>
+        </div>
+
+        <!-- Section C: GPS & Notes -->
+        <div style="margin-bottom: 24px;">
+          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 3: Notes &amp; Custody Details</h3>
+          
+          <div class="form-group">
+            <label for="deliveryNotes">Delivery Notes (Optional)</label>
+            <textarea id="deliveryNotes" rows="3" placeholder="Add any operational notes, seal damage observations, or receiver names..."></textarea>
+          </div>
+
+          <div id="gpsStatus" style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+            <span aria-hidden="true">&#x1F4CD;</span> GPS Location: <span id="gpsCoordsText">Fetching coordinates...</span>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="button" id="btnSubmitDelivery" class="btn" onclick="submitDeliveryRecord()" aria-label="Submit completed delivery chain of custody record">
+          <span aria-hidden="true">&#x1F4BE;</span> Record Custody Delivery
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW 5: ADMIN / HISTORY VIEW -->
+    <section id="viewAdmin" class="view-section">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+          <h2 class="card-title" style="margin-bottom: 0 !important;">Chain of Custody Audit Log</h2>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-small btn-secondary" onclick="exportCustodyCSV()" aria-label="Export chain of custody records to CSV file">
+              <span aria-hidden="true">&#x1F4E5;</span> Export CSV
+            </button>
+            <button type="button" class="btn btn-small btn-outline" onclick="showView('viewElections')" aria-label="Go to delivery workflow">
+              Delivery Workflow
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table id="auditTable">
+            <thead>
+              <tr>
+                <th scope="col">Timestamp</th>
+                <th scope="col">Precinct / Location</th>
+                <th scope="col">Scanned Seal</th>
+                <th scope="col">Expected Seal</th>
+                <th scope="col">Status</th>
+                <th scope="col">Driver</th>
+                <th scope="col">Photo</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <!-- Dynamically populated from Firestore -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Application State
+    let currentAccount = null;
+    let manifestData = [];
+    let selectedElection = null;
+    let selectedPollingPlace = null;
+    let html5QrcodeScanner = null;
+    let capturedPhotoBlob = null;
+    let currentGps = { lat: null, lon: null };
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW registration failed:', err));
+      });
+    }
+
+    // Initialize Auth Listener
+    window.addEventListener('DOMContentLoaded', () => {
+      loadManifestCSV();
+
+      if (typeof firebase !== 'undefined') {
+        firebase.auth().onAuthStateChanged((user) => {
+          if (user) {
+            currentAccount = user;
+            document.getElementById('userEmailText').textContent = user.email;
+            document.getElementById('userBadge').style.display = 'flex';
+            
+            // Check if admin user
+            if (user.email === 'admin@hcec.local' || user.email.includes('admin')) {
+              showView('viewAdmin');
+              loadAuditLog();
+            } else {
+              showView('viewElections');
+            }
+          } else {
+            currentAccount = null;
+            document.getElementById('userBadge').style.display = 'none';
+            showView('viewLogin');
+          }
+        });
+      }
+
+      // Initialize Geolocation
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            currentGps = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+            document.getElementById('gpsCoordsText').textContent = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+          },
+          (err) => {
+            document.getElementById('gpsCoordsText').textContent = 'Location unavailable (' + err.message + ')';
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      }
+    });
+
+    // View Navigation Router
+    function showView(viewId) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
+    }
+
+    // Load CSV Manifest
+    function loadManifestCSV() {
+      fetch('../data/polling_places.csv')
+        .then(res => res.text())
+        .then(text => {
+          manifestData = parseCSV(text);
+          renderElections();
+        })
+        .catch(err => console.error('Error loading manifest CSV:', err));
+    }
+
+    // Robust CSV Parser
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(',').map(h => h.trim());
+      const records = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const currentLine = lines[i].trim();
+        if (!currentLine) continue;
+        const values = currentLine.split(',').map(v => v.trim());
+        const record = {};
+        headers.forEach((h, idx) => {
+          record[h] = values[idx] || '';
+        });
+        records.push(record);
+      }
+      return records;
+    }
+
+    // Render Elections View
+    function renderElections() {
+      const electionsContainer = document.getElementById('electionsList');
+      electionsContainer.innerHTML = '';
+
+      const elections = {};
+      manifestData.forEach(item => {
+        if (!elections[item.election_id]) {
+          elections[item.election_id] = {
+            id: item.election_id,
+            name: item.election_name,
+            date: item.election_date
+          };
+        }
+      });
+
+      Object.values(elections).forEach(elec => {
+        const card = document.createElement('div');
+        card.className = 'flex-card';
+        card.onclick = () => selectElection(elec);
+        card.innerHTML = `
+          <h3 style="color: var(--primary-color); margin-bottom: 4px;">${escapeHtml(elec.name)}</h3>
+          <p style="font-size: 14px; color: var(--text-muted);">&#x1F4C5; Date: ${escapeHtml(elec.date)}</p>
+        `;
+        electionsContainer.appendChild(card);
+      });
+    }
+
+    function selectElection(elec) {
+      selectedElection = elec;
+      renderPollingPlaces();
+      showView('viewPollingPlaces');
+    }
+
+    // Render Polling Places View
+    function renderPollingPlaces() {
+      const listContainer = document.getElementById('pollingPlacesList');
+      listContainer.innerHTML = '';
+
+      const filtered = manifestData.filter(item => item.election_id === selectedElection.id);
+
+      filtered.forEach(item => {
+        const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(item.address)}`;
+        const card = document.createElement('div');
+        card.className = 'flex-card';
+        card.innerHTML = `
+          <div style="font-weight: 700; font-size: 14px; color: var(--primary-color);">Precinct ${escapeHtml(item.precinct)}</div>
+          <h3 style="margin: 4px 0;">${escapeHtml(item.location_name)}</h3>
+          <p style="font-size: 14px; margin-bottom: 8px;">
+            <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link" onclick="event.stopPropagation();">
+              &#x1F4CD; ${escapeHtml(item.address)}
+            </a>
+          </p>
+          <button type="button" class="btn btn-small" onclick="selectPollingPlace('${escapeHtml(item.precinct)}')" aria-label="Select ${escapeHtml(item.location_name)} for delivery">
+            Start Delivery &rarr;
+          </button>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    function filterPollingPlaces() {
+      const query = document.getElementById('pollingSearch').value.toLowerCase();
+      const cards = document.getElementById('pollingPlacesList').getElementsByClassName('flex-card');
+      Array.from(cards).forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? 'block' : 'none';
+      });
+    }
+
+    function selectPollingPlace(precinct) {
+      selectedPollingPlace = manifestData.find(item => item.election_id === selectedElection.id && item.precinct === precinct);
+      if (!selectedPollingPlace) return;
+
+      document.getElementById('deliveryLocationName').textContent = `Precinct ${selectedPollingPlace.precinct} — ${selectedPollingPlace.location_name}`;
+      const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(selectedPollingPlace.address)}`;
+      document.getElementById('deliveryLocationAddress').innerHTML = `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(selectedPollingPlace.address)}</a>`;
+      
+      // Reset form fields
+      document.getElementById('scannedBarcode').value = '';
+      document.getElementById('deliveryNotes').value = '';
+      document.getElementById('barcodeMatchStatus').style.display = 'none';
+      document.getElementById('photoPreviewBox').style.display = 'none';
+      capturedPhotoBlob = null;
+
+      showView('viewDelivery');
+    }
+
+    // Barcode Scanning Controls
+    function startBarcodeScanner() {
+      document.getElementById('reader').style.display = 'block';
+      document.getElementById('btnStartScan').style.display = 'none';
+      document.getElementById('btnStopScan').style.display = 'inline-block';
+
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+          document.getElementById('scannedBarcode').value = decodedText;
+          verifyBarcodeMatch();
+          stopBarcodeScanner();
+        },
+        (error) => {
+          // ignore low-level frame read errors
+        }
+      ).catch(err => {
+        alert("Camera error: " + err);
+        stopBarcodeScanner();
+      });
+    }
+
+    function stopBarcodeScanner() {
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().then(() => {
+          html5QrcodeScanner.clear();
+          document.getElementById('reader').style.display = 'none';
+          document.getElementById('btnStartScan').style.display = 'inline-block';
+          document.getElementById('btnStopScan').style.display = 'none';
+        }).catch(err => console.warn(err));
+      }
+    }
+
+    function verifyBarcodeMatch() {
+      if (!selectedPollingPlace) return;
+
+      const scanned = document.getElementById('scannedBarcode').value.trim();
+      const expected = selectedPollingPlace.expected_barcode.trim();
+      const statusDiv = document.getElementById('barcodeMatchStatus');
+
+      if (!scanned) {
+        statusDiv.style.display = 'none';
+        return;
+      }
+
+      statusDiv.style.display = 'flex';
+      if (scanned === expected) {
+        statusDiv.className = 'alert alert-success';
+        statusDiv.innerHTML = `&#x2705; <strong>MATCH VERIFIED:</strong> Scanned seal code matches expected manifest (${escapeHtml(expected)}).`;
+      } else {
+        statusDiv.className = 'alert alert-warning';
+        statusDiv.innerHTML = `&#x26A0;&#xFE0F; <strong>BARCODE MISMATCH ALERT:</strong> Scanned code (${escapeHtml(scanned)}) does not match expected seal manifest (${escapeHtml(expected)}).`;
+      }
+    }
+
+    // Photo Capture Handling
+    function handlePhotoCaptured(event) {
+      const file = event.target.files[0];
+      if (file) {
+        capturedPhotoBlob = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('photoPreviewImg').src = e.target.result;
+          document.getElementById('photoPreviewBox').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Firebase Auth Login
+    function appLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+      const alertDiv = document.getElementById('loginAlert');
+
+      alertDiv.style.display = 'none';
+
+      if (!email || !pass) {
+        alertDiv.textContent = 'Please enter both email and password.';
+        alertDiv.style.display = 'block';
+        return;
+      }
+
+      firebase.auth().signInWithEmailAndPassword(email, pass)
+        .catch(err => {
+          alertDiv.textContent = 'Authentication failed: ' + err.message;
+          alertDiv.style.display = 'block';
+        });
+    }
+
+    function appLogout() {
+      firebase.auth().signOut();
+    }
+
+    // Submit Delivery Record to Firestore
+    async function submitDeliveryRecord() {
+      const scannedBarcode = document.getElementById('scannedBarcode').value.trim();
+      const notes = document.getElementById('deliveryNotes').value.trim();
+      const alertDiv = document.getElementById('deliveryAlert');
+      const submitBtn = document.getElementById('btnSubmitDelivery');
+
+      if (!scannedBarcode) {
+        alertDiv.className = 'alert alert-danger';
+        alertDiv.textContent = 'Please scan or enter the seal barcode before submitting.';
+        alertDiv.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving Record...';
+
+      const isMatch = (scannedBarcode === selectedPollingPlace.expected_barcode.trim());
+      let photoUrl = '';
+
+      try {
+        // Upload photo to Firebase Storage if attached
+        if (capturedPhotoBlob && currentAccount) {
+          const fileName = `photos/${currentAccount.uid}/${Date.now()}_${selectedPollingPlace.precinct}.jpg`;
+          const storageRef = firebase.storage().ref().child(fileName);
+          const snapshot = await storageRef.put(capturedPhotoBlob);
+          photoUrl = await snapshot.ref.getDownloadURL();
+        }
+
+        // Save delivery record to Firestore
+        const deliveryRecord = {
+          election_id: selectedElection.id,
+          election_name: selectedElection.name,
+          precinct: selectedPollingPlace.precinct,
+          location_name: selectedPollingPlace.location_name,
+          address: selectedPollingPlace.address,
+          scanned_barcode: scannedBarcode,
+          expected_barcode: selectedPollingPlace.expected_barcode,
+          match_status: isMatch ? 'MATCH' : 'MISMATCH',
+          notes: notes,
+          photo_url: photoUrl,
+          driver_email: currentAccount ? currentAccount.email : 'anonymous',
+          driver_uid: currentAccount ? currentAccount.uid : 'anon',
+          gps: currentGps,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await firebase.firestore().collection('deliveries').add(deliveryRecord);
+
+        alertDiv.className = 'alert alert-success';
+        alertDiv.innerHTML = '&#x2705; Custody delivery successfully recorded!';
+        alertDiv.style.display = 'block';
+
+        setTimeout(() => {
+          alertDiv.style.display = 'none';
+          showView('viewPollingPlaces');
+        }, 2000);
+
+      } catch (err) {
+        console.error("Submission error:", err);
+        alertDiv.className = 'alert alert-danger';
+        alertDiv.textContent = 'Error recording delivery: ' + err.message;
+        alertDiv.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span aria-hidden="true">&#x1F4BE;</span> Record Custody Delivery';
+      }
+    }
+
+    // Load Admin Audit Log
+    function loadAuditLog() {
+      const tbody = document.getElementById('auditTableBody');
+      tbody.innerHTML = '<tr><td colspan="7">Loading custody records...</td></tr>';
+
+      firebase.firestore().collection('deliveries')
+        .orderBy('timestamp', 'desc')
+        .onSnapshot(snapshot => {
+          tbody.innerHTML = '';
+          if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="7">No delivery records found.</td></tr>';
+            return;
+          }
+
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const dateStr = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : 'Pending Sync';
+            const statusBadge = data.match_status === 'MATCH' 
+              ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; MATCH</span>'
+              : '<span style="color: var(--danger-color); font-weight:700;">&#x26A0;&#xFE0F; MISMATCH</span>';
+
+            const photoLink = data.photo_url 
+              ? `<a href="${data.photo_url}" target="_blank" rel="noopener noreferrer" class="map-link">View Photo</a>` 
+              : 'None';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${escapeHtml(dateStr)}</td>
+              <td><strong>Precinct ${escapeHtml(data.precinct)}</strong><br>${escapeHtml(data.location_name)}</td>
+              <td><code>${escapeHtml(data.scanned_barcode)}</code></td>
+              <td><code>${escapeHtml(data.expected_barcode)}</code></td>
+              <td>${statusBadge}</td>
+              <td>${escapeHtml(data.driver_email)}</td>
+              <td>${photoLink}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }, err => {
+          tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger-color);">Error loading records: ${escapeHtml(err.message)}</td></tr>`;
+        });
+    }
+
+    // CSV Export Feature (Playbook §7)
+    function exportCustodyCSV() {
+      firebase.firestore().collection('deliveries')
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            alert('No custody records available to export.');
+            return;
+          }
+
+          let csvContent = 'Timestamp,Election,Precinct,Location,Scanned Seal,Expected Seal,Status,Driver,Notes,Photo URL\n';
+
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            const dateStr = d.timestamp ? new Date(d.timestamp.seconds * 1000).toISOString() : '';
+            const row = [
+              dateStr,
+              d.election_name || '',
+              d.precinct || '',
+              d.location_name || '',
+              d.scanned_barcode || '',
+              d.expected_barcode || '',
+              d.match_status || '',
+              d.driver_email || '',
+              d.notes || '',
+              d.photo_url || ''
+            ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+
+            csvContent += row + '\n';
+          });
+
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.setAttribute('href', url);
+          link.setAttribute('download', `HCEC_ChainOfCustody_${new Date().toISOString().slice(0,10)}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        })
+        .catch(err => alert('Failed to generate CSV export: ' + err.message));
+    }
+
+    // Utility: HTML Escaping
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
