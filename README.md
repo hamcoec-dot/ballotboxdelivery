@@ -9,7 +9,7 @@ Hosted entirely as a static single-page application on **GitHub Pages**, backed 
 ## 📋 Features
 
 - **Mobile Camera Barcode Scanner:** Reads Code 128, Code 39, QR Code, Data Matrix seals via live camera (`html5-qrcode`).
-- **Manifest Barcode Verification:** Auto-verifies scanned barcode against known-good manifest in `data/polling_places.csv`. Shows green `MATCH` or red warning `MISMATCH`.
+- **Manifest Barcode Verification:** Auto-verifies scanned barcode against known-good manifest in `polling_places.csv`. Shows green `MATCH` or red warning `MISMATCH`.
 - **Delivery Photograph Capture:** Integrates with native camera to capture and upload proof-of-delivery photos.
 - **GPS Timestamp Logging:** Automatically captures precise geolocation coordinates upon delivery submit.
 - **Offline Mode & Persistence:** Operates seamlessly offline via Service Worker caching and Firestore offline persistence.
@@ -69,7 +69,7 @@ service firebase.storage {
 
 5. **Web App Credentials:**
    - Go to **Project Settings -> General -> Your apps**.
-   - Copy the web app configuration into `public/firebase-config.js` if updating API keys.
+   - Copy the web app configuration into `firebase-config.js` if updating API keys.
 
 ---
 
@@ -77,14 +77,14 @@ service firebase.storage {
 
 1. Commit and push repository to GitHub.
 2. In GitHub repository settings, navigate to **Pages**.
-3. Set source branch to `main` (or `master`) and folder to `/public` (or root if publishing root).
+3. Set source branch to `main` (or `master`) and folder to `/ (root)`.
 4. Save. GitHub Pages will build and deploy over HTTPS.
 
 ---
 
 ## 📄 Managing Polling Place Barcode Manifests
 
-Before each election, update [`data/polling_places.csv`](data/polling_places.csv) with the expected seal barcodes:
+Before each election, update [`polling_places.csv`](polling_places.csv) with the expected seal barcodes:
 
 ```csv
 election_id,election_name,election_date,precinct,location_name,address,expected_barcode
