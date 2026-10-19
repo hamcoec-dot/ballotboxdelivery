@@ -29,47 +29,31 @@ The application is linked to Firebase project **`ballotboxdelivery`**:
    - Go to **Build -> Authentication -> Sign-in method**.
    - Enable **Email/Password**.
     - Go to **Users -> Add User**:
-     - Create delivery driver account (e.g. `driver@yourdomain.gov`)
-     - Create admin account (e.g. `admin@yourdomain.gov`)
+     - Create delivery driver accounts (e.g. `driver@yourdomain.gov`)
+     - Create admin account `elections@govotehamiltontn.gov`
+     - Delete the retired `admin@hcec.local` user if present
+   - Under **Settings -> User actions**, disable **Enable create (sign-up)** (recommended).
 3. **Firestore Database:**
    - Go to **Build -> Firestore Database -> Rules**.
-   - Paste the following security rules and click **Publish**:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /deliveries/{deliveryId} {
-      allow create: if request.auth != null;
-      allow read: if request.auth != null;
-      allow update, delete: if request.auth != null && request.auth.token.email.matches('.*admin.*');
-    }
-  }
-}
-```
-
+   - Paste the contents of [`firestore.rules`](firestore.rules) and click **Publish**.
 4. **Storage:**
    - Go to **Build -> Storage -> Rules**.
-   - Paste the following security rules and click **Publish**:
+   - Paste the contents of [`storage.rules`](storage.rules) and click **Publish**.
+5. **First admin:** follow **Managing Admins** below for `elections@govotehamiltontn.gov`.
 
-```javascript
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /photos/{userId}/{fileName} {
-      allow write: if request.auth != null
-                   && request.auth.uid == userId
-                   && request.resource.size < 10 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
-      allow read: if request.auth != null;
-    }
-  }
-}
-```
-
-5. **Web App Credentials:**
+6. **Web App Credentials:**
    - Go to **Project Settings -> General -> Your apps**.
    - Copy the web app configuration into `firebase-config.js` if updating API keys.
+
+---
+
+## 🔑 Managing Admins
+
+Admins are an allowlist of Firebase Auth UIDs in the Firestore `admins` collection. Client writes are blocked; manage only via Firebase Console.
+
+**Add:** Auth -> Users -> copy the user's UID -> Firestore -> `admins` collection -> Add document, Document ID = UID, fields `email` (string, for readability) and `added` (timestamp).
+
+**Remove:** delete the `admins/{uid}` document.
 
 ---
 

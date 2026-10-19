@@ -235,13 +235,17 @@
             document.getElementById('userEmailText').textContent = user.email;
             document.getElementById('userBadge').style.display = 'flex';
             
-            // Check if admin user
-            if (user.email && user.email.toLowerCase().includes('admin')) {
-              showView('viewAdmin');
-              loadAuditLog();
-            } else {
-              showView('viewElections');
-            }
+            // Admin allowlist lookup (UX routing only; Firestore rules enforce access)
+            firebase.firestore().collection('admins').doc(user.uid).get()
+              .then((doc) => {
+                if (doc.exists) {
+                  showView('viewAdmin');
+                  loadAuditLog();
+                } else {
+                  showView('viewElections');
+                }
+              })
+              .catch(() => showView('viewElections')); // fail closed
           } else {
             currentAccount = null;
             document.getElementById('userBadge').style.display = 'none';
