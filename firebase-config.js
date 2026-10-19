@@ -12,6 +12,14 @@ const firebaseConfig = {
 // Initialize Firebase
 if (typeof firebase !== 'undefined') {
   firebase.initializeApp(firebaseConfig);
+
+  // Local development: use Firebase Emulator Suite instead of the live project
+  if (['localhost', '127.0.0.1'].includes(location.hostname) && location.search.includes('emulator')) {
+    firebase.auth().useEmulator('http://127.0.0.1:9099');
+    firebase.firestore().useEmulator('127.0.0.1', 8080);
+    firebase.storage().useEmulator('127.0.0.1', 9199);
+    console.info('Using Firebase emulators');
+  }
   
   // Enable offline persistence for Firestore
   firebase.firestore().enablePersistence({ synchronizeTabs: true })

@@ -1,11 +1,12 @@
-const CACHE_NAME = 'hcec-delivery-v2';
+const CACHE_NAME = 'hcec-delivery-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './firebase-config.js',
   './manifest.json',
-  './polling_places.csv',
+  './machine_data.csv',
+  './precincts.csv',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js',
@@ -49,13 +50,16 @@ self.addEventListener('fetch', (event) => {
         if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
+            // Strip the ?v= cache-buster on CSVs so each load overwrites one entry instead of adding a new one
+            const url = new URL(event.request.url);
+            const key = url.pathname.endsWith('.csv') ? url.origin + url.pathname : event.request;
+            cache.put(key, responseToCache);
           });
         }
         return response;
       })
       .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
+        return caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }

@@ -109,12 +109,14 @@
 
         <!-- Section A: Barcode Scan -->
         <div style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
-          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 1: Scan Ballot Box Seal Barcode</h3>
-          
+          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 1: Scan Ballot Box Seal Barcodes</h3>
+          <p id="sealProgress" style="font-weight: 700; margin-bottom: 12px;"></p>
+          <div id="sealChecklist" style="margin-bottom: 16px;"></div>
+
           <div id="reader" style="display: none; margin-bottom: 16px;"></div>
 
           <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
-            <button type="button" id="btnStartScan" class="btn" onclick="startBarcodeScanner()" aria-label="Open camera to scan seal barcode">
+            <button type="button" id="btnStartScan" class="btn" onclick="startBarcodeScanner()" aria-label="Open camera to scan seal barcodes">
               <span aria-hidden="true">&#x1F4F7;</span> Open Barcode Scanner
             </button>
             <button type="button" id="btnStopScan" class="btn btn-secondary" onclick="stopBarcodeScanner()" style="display: none;" aria-label="Stop barcode camera scanner">
@@ -123,13 +125,14 @@
           </div>
 
           <div class="form-group">
-            <label for="scannedBarcode">Scanned / Manual Barcode Entry</label>
-            <input type="text" id="scannedBarcode" placeholder="e.g. SEAL-A001-2026" onkeyup="verifyBarcodeMatch()" onchange="verifyBarcodeMatch()">
+            <label for="manualSeal">Manual Seal Entry</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="manualSeal" placeholder="e.g. EE120463" onkeydown="if(event.key==='Enter'){event.preventDefault();addManualSeal();}">
+              <button type="button" class="btn btn-small" onclick="addManualSeal()" aria-label="Add manually entered seal">Add</button>
+            </div>
           </div>
 
-          <div id="barcodeMatchStatus" class="alert alert-warning" style="display: none;">
-            <!-- Verification result -->
-          </div>
+          <div id="sealToast" class="alert alert-warning" style="display: none;"></div>
         </div>
 
         <!-- Section B: Delivery Photo -->
@@ -269,103 +272,172 @@
       }
     });
 
-    // Embedded Manifest Fallback Dataset (All 79 Locations from ED.html)
-    const DEFAULT_EMBEDDED_CSV = `election_id,election_name,election_date,precinct,location_name,address,expected_barcode
-2026-08,State & Federal Primary and County General Election,2026-08-06,01,Airport A & B - Shepherd Community Center,"2124 Shepherd Rd, Chattanooga TN 37421",SEAL-A001-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,02,Alton Park - Bethlehem Center,"200 W 38th St, Chattanooga TN 37410",SEAL-A002-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,03,Apison A & B - Tri-Community Fire Station 3,"11115 Park Pl, Apison TN 37302",SEAL-A003-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,04,Avondale - Avondale Community Center,"1305 Dodson Ave, Chattanooga TN 37406",SEAL-A004-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,05,Birchwood - Birchwood Community Center,"5623 Highway 60, Birchwood TN 37308",SEAL-A005-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,06,Bonny Oaks - Washington Hills Community Center,"4628 Oakwood Dr, Chattanooga TN 37416",SEAL-A006-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,07,Brainerd - Brainerd Crossroads (The BX),"4011 Austin St, Chattanooga TN 37411",SEAL-A007-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,08,Brainerd Hills - Alhambra Shrine Temple,"1000 Alhambra Dr, Chattanooga TN 37421",SEAL-A008-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,09,Bushtown - Carver Community Center,"600 N Orchard Knob Ave, Chattanooga TN 37404",SEAL-A009-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,10,Collegedale A & B - Chestnut Hall at the Commons,"4950 Swinyar Dr, Collegedale TN 37363",SEAL-A010-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,11,Concord A & B - Concord Baptist Church,"7025 E Brainerd Rd, Chattanooga TN 37421",SEAL-A011-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,12,Courthouse - Olivet Baptist,"740 E Martin Luther King Blvd, Chattanooga TN 37403",SEAL-A012-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,13,Dalewood - New Hope Baptist Church,"3777 Wilcox Blvd, Chattanooga TN 37411",SEAL-A013-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,14,Dallas - Sequoyah Baptist Tabernacle,"8405 Daisy Dallas Rd, Hixson TN 37343",SEAL-A014-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,15,Downtown - Dogwood Manor Community Room,"959 Gateway Ave, Chattanooga TN 37402",SEAL-A015-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,16,Dupont - The Gathering,"4445 Hixson Pike, Hixson TN 37343",SEAL-A016-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,17,East Brainerd A & B - Covenant Presbyterian Church,"8451 E Brainerd Rd, Chattanooga TN 37421",SEAL-A017-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,18,East Chattanooga - East Chattanooga Community Center,"2409 Dodson Ave, Chattanooga TN 37406",SEAL-A018-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,19,East Lake - East Lake Community Center,"3601 Dodds Ave, Chattanooga TN 37407",SEAL-A019-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,20,East Ridge A - Greens Lake Church of Christ,"1209 Greens Lake Rd, East Ridge TN 37412",SEAL-A020-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,21,East Ridge B - East Ridge Community Center (Gym),"1515 Tombras Ave, East Ridge TN 37412",SEAL-A021-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,22,East Ridge C - East Ridge Community Center,"1515 Tombras Ave, East Ridge TN 37412",SEAL-A022-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,23,East Ridge D - East Ridge United Methodist Church,"1601 Prater Rd, Chattanooga TN 37412",SEAL-A023-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,24,Eastgate - Chris L. Ramsey Sr. Community Center,"1010 N Moore Rd, Chattanooga TN 37411",SEAL-A024-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,25,Eastside - New Life SDA Church,"2099 E Main St, Chattanooga TN 37404",SEAL-A025-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,26,Fairmount - Bachman Community Center,"2815 Anderson Pike, Signal Mountain TN 37377",SEAL-A026-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,27,Falling Water A & B - Chattanooga Community Church of God,"6528B Old Dayton Pike, Hixson TN 37343",SEAL-A027-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,28,Flat Top Mountain - Flat Top Volunteer Fire Station,"13331 Jones Gap Rd, Soddy Daisy TN 37379",SEAL-A028-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,29,Ganns - Middle Valley Church of God,"1703 Thrasher Pike, Hixson TN 37343",SEAL-A029-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,30,Glenwood - Glenwood Community Center,"2610 E 3rd St, Chattanooga TN 37404",SEAL-A030-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,31,Harrison - Harrison Ruritan Club,"5709 Tyner Ln, Harrison TN 37341",SEAL-A031-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,32,Harrison Bay - Greenwood Baptist Church,"8529 Snow Hill Rd, Ooltewah TN 37363",SEAL-A032-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,33,Hixson - Hixson Community Center,"5401 School Drive, Hixson TN 37343",SEAL-A033-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,34,Hunter - Church of the Highlands,"6621 Hunter Rd, Harrison TN 37341",SEAL-A034-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,35,Hurricane Creek - Christ United Methodist Church,"8645 E Brainerd Rd, Chattanooga TN 37421",SEAL-A035-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,36,Kingspoint - Oakwood Baptist Church (Gym),"4501 Bonny Oaks Dr, Chattanooga TN 37416",SEAL-A036-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,37,Lake Hills - Northminster Presbyterian Church,"4791 Hal Dr, Chattanooga TN 37416",SEAL-A037-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,38,Lakesite - Lakesite City Hall,"9201 Rocky Point Rd, Soddy Daisy TN 37379",SEAL-A038-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,39,Lookout Mountain - Jane Harris Youth Building,"301 N Watauga Ln, Lookout Mountain TN 37350",SEAL-A039-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,40,Lookout Valley - John A Patten Community Center,"3202 Kellys Ferry Rd, Chattanooga TN 37419",SEAL-A040-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,41,Lupton City - Lupton Drive Baptist Church,"859 Lupton Dr, Chattanooga TN 37415",SEAL-A041-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,42,Meadowview - Maple Grove Baptist Church,"9525 Birchwood Pike, Harrison TN 37341",SEAL-A042-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,43,Middle Valley - Middle Valley Baptist Church,"7901 Middle Valley Rd, Hixson TN 37343",SEAL-A043-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,44,Missionary Ridge - Missionary Ridge Neighborhood Assoc,"36 Sheridan Rd, Chattanooga TN 37412",SEAL-A044-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,45,"Mountain Creek A, B & C - Mtn Creek Church of Christ","985 Runyan Dr, Chattanooga TN 37405",SEAL-A045-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,46,Mowbray A & B - Mowbray Volunteer Fire Station,"1705 Mowbray Pike, Soddy Daisy TN 37379",SEAL-A046-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,47,Murray Hills - Hamilton Life Church (Old Olivet Nation),"4872 Jersey Pike, Chattanooga TN 37416",SEAL-A047-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,48,North Chattanooga A & B - North Chattanooga Community Center,"406 May St, Chattanooga TN 37405",SEAL-A048-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,49,Northgate - Stuart Heights Baptist Church Hixson Campus,"1505 Cloverdale Dr, Hixson TN 37343",SEAL-A049-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,50,Northshore - Knights of Columbus,"313 Sylvan St, Chattanooga TN 37405",SEAL-A050-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,51,Northwoods - Chattanooga Grace Church of the Nazarene,"6310 Dayton Blvd, Hixson TN 37343",SEAL-A051-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,52,Ooltewah - Seventh-Day Adventist Fellowship Center,"6233 Ooltewah Georgetown Rd, Ooltewah TN 37363",SEAL-A052-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,53,Ooltewah Georgetown - Meadowview Baptist Church,"10715 Ooltewah Georgetown Rd, Georgetown TN 37336",SEAL-A053-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,54,Ooltewah Ringgold - Church of Jesus Christ of Latter-Day Saints,"3067 Ooltewah Ringgold Rd, Ooltewah TN 37363",SEAL-A054-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,55,Pleasant Grove A & B - Pleasant Grove Baptist Church,"7634 Gann Rd, Hixson TN 37343",SEAL-A055-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,56,Possum Creek - Union Fork Baptist Church,"350 Lee Pike, Soddy Daisy TN 37379",SEAL-A056-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,57,Red Bank A - Disabled American Veterans Chapter 6,"619 Memorial Dr, Chattanooga TN 37415",SEAL-A057-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,58,Red Bank B - Joe Glasscock Community Center,"3653 Tom Weathers Drive, Red Bank TN 37415",SEAL-A058-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,59,Red Bank C - Calvary Baptist Church,"5201 Dayton Blvd, Chattanooga TN 37415",SEAL-A059-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,60,Ridgedale - La Paz Chattanooga,"809 S. Willow St, Chattanooga TN 37404",SEAL-A060-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,61,Ridgeside - Ridgeside Community Pool House,"300 Shepherd Ave, Chattanooga TN 37411",SEAL-A061-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,62,Riverview - Northside Presbyterian Church,"923 Mississippi Ave, Chattanooga TN 37405",SEAL-A062-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,63,Sale Creek - Sale Creek Fire Department,"14828 Dayton Pike, Sale Creek TN 37373",SEAL-A063-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,64,Savannah Bay - Highway 58 Volunteer Fire Training Center,"9108 Snow Hill Rd, Ooltewah TN 37363",SEAL-A064-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,65,Sequoyah - Sequoyah Church of God,"2007 Frankie Lane, Soddy Daisy TN 37379",SEAL-A065-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,66,Signal Mountain A & B - Signal Mountain Presbyterian Church,"612 James Blvd, Signal Mountain TN 37377",SEAL-A066-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,67,Silverdale - Chattanooga First Seventh-Day Adventist Church,"7450 Standifer Gap Rd, Chattanooga TN 37421",SEAL-A067-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,68,Soddy Daisy A - Daisy Church of God (Gym),"9555 Dayton Pike, Soddy Daisy TN 37379",SEAL-A068-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,69,Soddy Daisy B - Stuart Heights Baptist Church Soddy Daisy Campus,"10049 Dayton Pike, Soddy Daisy TN 37379",SEAL-A069-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,70,Soddy Daisy C - Soddy Daisy Community Center,"190 Depot Street, Soddy Daisy TN 37379",SEAL-A070-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,71,St Elmo - South Chatt Community Center,"1151 W 40th St, Chattanooga TN 37409",SEAL-A071-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,72,Stuart Heights - Rivermont Presbyterian Church,"3319 Hixson Pike, Chattanooga TN 37415",SEAL-A072-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,73,Summit - Chattanooga First Seventh-Day Adventist Church,"7450 Standifer Gap Rd, Chattanooga TN 37421",SEAL-A073-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,74,Tyner - Tyner Community Center (Gym),"6900 Ty Hi Dr, Chattanooga TN 37421",SEAL-A074-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,75,Valleybrook - Clear Creek Church of Christ,"5612 Hixson Pike, Hixson TN 37343",SEAL-A075-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,76,Walden - Walden Town Hall,"1836 Taft Hwy, Signal Mountain TN 37377",SEAL-A076-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,77,Westview A & B - Christ United Methodist Church,"8645 E Brainerd Rd, Chattanooga TN 37421",SEAL-A077-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,78,Wolftever - Harrison Center (Old Harrison Elem.),"5637 Highway 58, Harrison TN 37341",SEAL-A078-2026
-2026-08,State & Federal Primary and County General Election,2026-08-06,79,Woodmore - New Covenant Fellowship,"1326 N Moore Rd, Chattanooga TN 37411",SEAL-A079-2026`;
+    // Seal scanning state
+    let scannedSeals = [];
+    let lastScan = { key: '', at: 0 };
+    let toastTimer = null;
+
+    const normSeal = (v) => String(v || '').trim().toUpperCase();
+
+    // Quote-aware CSV parser -> array of field arrays (handles BOM, CRLF, "" escapes)
+    function parseCSV(text) {
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const rows = [];
+      let row = [], field = '', inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQuotes) {
+          if (c === '"') {
+            if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
+          } else field += c;
+        } else if (c === '"') inQuotes = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\n' || c === '\r') {
+          if (c === '\r' && text[i + 1] === '\n') i++;
+          row.push(field); field = '';
+          if (row.some(f => f.trim() !== '')) rows.push(row);
+          row = [];
+        } else field += c;
+      }
+      row.push(field);
+      if (row.some(f => f.trim() !== '')) rows.push(row);
+      return rows;
+    }
+
+    function csvToObjects(text) {
+      const rows = parseCSV(text);
+      if (rows.length < 2) return [];
+      const headers = rows[0].map(h => h.trim());
+      return rows.slice(1).map(r => {
+        const o = {};
+        headers.forEach((h, i) => { if (!(h in o)) o[h] = (r[i] || '').trim(); });
+        return o;
+      });
+    }
+
+    // Precincts export has unquoted commas inside both address fields, so parse positionally.
+    function parsePrecinctsCSV(text) {
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(',').map(h => h.trim());
+      const iName = headers.indexOf('PollingPlaceName');
+      const iMail = headers.indexOf('PollingPlaceMailingAddress');
+      const iCpn = headers.indexOf('CountyPrecinctNum');
+      const iPrec = headers.indexOf('PrecinctName');
+      if (iName < 0 || iMail < 0 || iCpn < 0 || iPrec < 0) throw new Error('precincts.csv: unexpected header');
+      const head = iName + 1;
+      const tail = headers.length - (iMail + 1);
+      const zipRe = /\b[A-Z]{2}\s+\d{5}(-\d{4})?\s*$/;
+      const clean = (s) => s.replace(/\s*,\s*/g, ', ').replace(/\s+/g, ' ').trim();
+
+      return lines.slice(1).map(line => {
+        const f = line.split(',');
+        const middle = f.slice(head, f.length - tail);
+        const split = middle.findIndex(p => zipRe.test(p.trim()));
+        let address;
+        if (split < 0) {
+          console.warn('precincts.csv: no ZIP found in address for line:', line);
+          address = middle.slice(0, Math.ceil(middle.length / 2)).join(',');
+        } else {
+          address = middle.slice(0, split + 1).join(',');
+        }
+        return {
+          num: f[iCpn].trim(),
+          name: f[iPrec].trim(),
+          building: f[iName].trim(),
+          address: clean(address)
+        };
+      });
+    }
+
+    function titleCase(s) {
+      return s.toLowerCase().replace(/(^|[\s(\-\/&])([a-z])/g, (m, p, c) => p + c.toUpperCase());
+    }
+    function slugify(s) {
+      return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+
+    // Build one entry per physical building from the two exports
+    function buildManifest(machineRows, precinctRows) {
+      const first = (k) => (machineRows.find(r => r[k]) || {})[k] || '';
+      const doe = first('DOE');
+      const dm = doe.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      const electionDate = dm ? `${dm[3]}-${dm[1].padStart(2, '0')}-${dm[2].padStart(2, '0')}` : doe;
+      if (!dm) throw new Error('machine_data.csv: missing or invalid DOE (election date)');
+      const election = {
+        election_id: electionDate.slice(0, 7),
+        election_name: first('ElectionName') || 'Election',
+        election_date: electionDate
+      };
+
+      const buildings = new Map();
+      const byCpn = new Map();
+      const byName = new Map();
+      precinctRows.forEach(p => {
+        const key = slugify(p.building + '|' + p.address);
+        if (!buildings.has(key)) {
+          buildings.set(key, Object.assign({}, election, {
+            location_key: key,
+            location_name: titleCase(p.building),
+            location_name_raw: p.building,
+            address: p.address,
+            precincts: [],
+            machines: []
+          }));
+        }
+        const b = buildings.get(key);
+        b.precincts.push({ num: p.num, name: titleCase(p.name) });
+        byCpn.set(p.num, b);
+        byName.set(p.name.toUpperCase(), b);
+      });
+
+      const unassigned = [];
+      machineRows.forEach(m => {
+        const lid = m['Ballot box lid SN'];
+        if (!lid) return;
+        const entry = {
+          cpn: m['CPN'], precinct: m['Precinct'], machine: m['Machine'],
+          serial: m['Serial Number'], lid_sn: lid
+        };
+        const b = (m['CPN'] && byCpn.get(m['CPN'])) || byName.get((m['Precinct'] || '').toUpperCase());
+        if (b) b.machines.push(entry);
+        else { console.warn('Unassigned machine (no precinct match):', entry); unassigned.push(entry); }
+      });
+
+      const result = Array.from(buildings.values());
+      result.forEach(b => {
+        if (!b.machines.length) console.warn('No machines for building:', b.location_name);
+      });
+      if (unassigned.length) {
+        result.push(Object.assign({}, election, {
+          location_key: 'unassigned-machines',
+          location_name: 'Unassigned Machines',
+          location_name_raw: 'UNASSIGNED MACHINES',
+          address: '',
+          precincts: [],
+          machines: unassigned
+        }));
+      }
+      return result;
+    }
 
     function loadManifestCSV() {
-      // Add cache-busting timestamp query parameter and force network fetch
-      fetch('./polling_places.csv?v=' + Date.now(), { cache: 'no-store' })
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.text();
-        })
-        .then(text => {
-          manifestData = parseCSV(text);
+      const bust = '?v=' + Date.now();
+      const get = (u) => fetch(u + bust, { cache: 'no-store' }).then(res => {
+        if (!res.ok) throw new Error(u + ' HTTP ' + res.status);
+        return res.text();
+      });
+      Promise.all([get('./machine_data.csv'), get('./precincts.csv')])
+        .then(([machineText, precinctText]) => {
+          manifestData = buildManifest(csvToObjects(machineText), parsePrecinctsCSV(precinctText));
           renderElections();
         })
         .catch(err => {
-          console.warn('Could not fetch polling_places.csv, using embedded manifest fallback:', err);
-          manifestData = parseCSV(DEFAULT_EMBEDDED_CSV);
-          renderElections();
+          console.error('Could not load election data:', err);
+          manifestData = [];
+          document.getElementById('electionsList').innerHTML =
+            `<div class="alert alert-danger">Could not load election data: ${escapeHtml(err.message)}. Check your connection and reload.</div>`;
         });
     }
 
@@ -375,29 +447,9 @@
       const target = document.getElementById(viewId);
       if (target) target.classList.add('active');
 
-      if (viewId === 'viewElections') {
+      if (viewId === 'viewElections' && manifestData.length) {
         renderElections();
       }
-    }
-
-    // Robust CSV Parser
-    function parseCSV(text) {
-      const lines = text.trim().split('\n');
-      if (lines.length < 2) return [];
-      const headers = lines[0].split(',').map(h => h.trim());
-      const records = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        const currentLine = lines[i].trim();
-        if (!currentLine) continue;
-        const values = currentLine.split(',').map(v => v.trim());
-        const record = {};
-        headers.forEach((h, idx) => {
-          record[h] = values[idx] || '';
-        });
-        records.push(record);
-      }
-      return records;
     }
 
     // Render Elections View
@@ -434,29 +486,37 @@
       showView('viewPollingPlaces');
     }
 
-    // Render Polling Places View
+    const precinctListText = (b) => b.precincts.map(p => `${p.name} (${p.num})`).join(', ');
+
+    // Render Polling Places View (one card per building)
     function renderPollingPlaces() {
       const listContainer = document.getElementById('pollingPlacesList');
       listContainer.innerHTML = '';
 
-      const filtered = manifestData.filter(item => item.election_id === selectedElection.id);
-
-      filtered.forEach(item => {
+      manifestData.filter(item => item.election_id === selectedElection.id).forEach(item => {
         const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(item.address)}`;
+        const noSeals = item.machines.length === 0;
         const card = document.createElement('div');
         card.className = 'flex-card';
         card.innerHTML = `
-          <div style="font-weight: 700; font-size: 14px; color: var(--primary-color);">Precinct ${escapeHtml(item.precinct)}</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--primary-color);">${escapeHtml(precinctListText(item))}</div>
           <h3 style="margin: 4px 0;">${escapeHtml(item.location_name)}</h3>
-          <p style="font-size: 14px; margin-bottom: 8px;">
-            <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link" onclick="event.stopPropagation();">
-              &#x1F4CD; ${escapeHtml(item.address)}
-            </a>
+          ${item.address ? `<p style="font-size: 14px; margin-bottom: 8px;">
+            <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(item.address)}</a>
+          </p>` : ''}
+          <p style="font-size: 14px; margin-bottom: 8px;${noSeals ? ' color: var(--danger-color);' : ''}">
+            ${noSeals ? '&#x26A0;&#xFE0F; No seals on file' : `&#x1F512; ${item.machines.length} seal${item.machines.length === 1 ? '' : 's'}`}
           </p>
-          <button type="button" class="btn btn-small" onclick="selectPollingPlace('${escapeHtml(item.precinct)}')" aria-label="Select ${escapeHtml(item.location_name)} for delivery">
-            Start Delivery &rarr;
-          </button>
         `;
+        const link = card.querySelector('.map-link');
+        if (link) link.addEventListener('click', e => e.stopPropagation());
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-small';
+        btn.innerHTML = 'Start Delivery &rarr;';
+        btn.setAttribute('aria-label', `Select ${item.location_name} for delivery`);
+        btn.addEventListener('click', () => selectPollingPlace(item.location_key));
+        card.appendChild(btn);
         listContainer.appendChild(card);
       });
     }
@@ -470,25 +530,107 @@
       });
     }
 
-    function selectPollingPlace(precinct) {
-      selectedPollingPlace = manifestData.find(item => item.election_id === selectedElection.id && item.precinct === precinct);
+    function selectPollingPlace(locationKey) {
+      selectedPollingPlace = manifestData.find(item => item.election_id === selectedElection.id && item.location_key === locationKey);
       if (!selectedPollingPlace) return;
 
-      document.getElementById('deliveryLocationName').textContent = `Precinct ${selectedPollingPlace.precinct} — ${selectedPollingPlace.location_name}`;
+      const names = precinctListText(selectedPollingPlace);
+      document.getElementById('deliveryLocationName').textContent = selectedPollingPlace.location_name;
       const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(selectedPollingPlace.address)}`;
-      document.getElementById('deliveryLocationAddress').innerHTML = `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(selectedPollingPlace.address)}</a>`;
-      
+      document.getElementById('deliveryLocationAddress').innerHTML =
+        (names ? `${escapeHtml(names)}<br>` : '') +
+        (selectedPollingPlace.address
+          ? `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(selectedPollingPlace.address)}</a>`
+          : '');
+
       // Reset form fields
-      document.getElementById('scannedBarcode').value = '';
+      if (html5QrcodeScanner) stopBarcodeScanner();
+      scannedSeals = [];
+      lastScan = { key: '', at: 0 };
+      document.getElementById('manualSeal').value = '';
       document.getElementById('deliveryNotes').value = '';
-      document.getElementById('barcodeMatchStatus').style.display = 'none';
+      document.getElementById('sealToast').style.display = 'none';
       document.getElementById('photoPreviewBox').style.display = 'none';
       capturedPhotoBlob = null;
+      renderSealChecklist();
 
       showView('viewDelivery');
     }
 
-    // Barcode Scanning Controls
+    // Seal checklist
+    function sealStatus() {
+      const expectedKeys = new Set(selectedPollingPlace.machines.map(m => normSeal(m.lid_sn)));
+      const scannedKeys = new Set(scannedSeals.map(s => normSeal(s.code)));
+      const seals = selectedPollingPlace.machines.map(m => Object.assign({}, m, { scanned: scannedKeys.has(normSeal(m.lid_sn)) }));
+      const unexpected = scannedSeals.filter(s => !expectedKeys.has(normSeal(s.code)));
+      return { seals, unexpected, missing: seals.filter(s => !s.scanned) };
+    }
+
+    function renderSealChecklist() {
+      if (!selectedPollingPlace) return;
+      const { seals, unexpected } = sealStatus();
+      const done = seals.filter(s => s.scanned).length;
+      document.getElementById('sealProgress').textContent = `${done} of ${seals.length} seals scanned`;
+
+      let html = seals.map(s => `
+        <div style="display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px solid var(--border-color);">
+          <div>
+            <div style="font-weight:600;">${escapeHtml([titleCase(s.precinct || ''), s.machine ? 'Machine ' + s.machine : '', s.serial].filter(Boolean).join(' · '))}</div>
+            <code>${escapeHtml(s.lid_sn)}</code>
+          </div>
+          <div style="white-space:nowrap;">${s.scanned ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; Scanned</span>' : '<span style="color: var(--text-muted);">Pending</span>'}</div>
+        </div>`).join('');
+      if (!seals.length) html = '<p style="color: var(--danger-color);">No expected seals on file for this location.</p>';
+
+      if (unexpected.length) {
+        html += '<h4 style="margin:12px 0 4px;">&#x26A0;&#xFE0F; Extra / unexpected seals</h4>';
+        html += unexpected.map(s => `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0;">
+            <code>${escapeHtml(s.code)}</code>
+            <button type="button" class="btn btn-small btn-outline" onclick="removeScannedSeal(${scannedSeals.indexOf(s)})" aria-label="Remove seal ${escapeHtml(s.code)}">Remove</button>
+          </div>`).join('');
+      }
+      document.getElementById('sealChecklist').innerHTML = html;
+    }
+
+    function showSealToast(msg) {
+      const t = document.getElementById('sealToast');
+      t.textContent = msg;
+      t.style.display = 'flex';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2500);
+    }
+
+    function addScannedSeal(code, source) {
+      code = String(code || '').trim();
+      if (!code || !selectedPollingPlace) return false;
+      const key = normSeal(code);
+      const now = Date.now();
+      if (key === lastScan.key && now - lastScan.at < 2000) return false; // debounce camera repeats
+      lastScan = { key, at: now };
+      if (scannedSeals.some(s => normSeal(s.code) === key)) {
+        showSealToast(`Seal ${code} already scanned.`);
+        return false;
+      }
+      scannedSeals.push({ code, source, at: new Date().toISOString() });
+      renderSealChecklist();
+      return true;
+    }
+
+    function addManualSeal() {
+      const input = document.getElementById('manualSeal');
+      if (!input.value.trim()) return;
+      if (addScannedSeal(input.value, 'manual')) input.value = '';
+      else input.select();
+    }
+
+    function removeScannedSeal(idx) {
+      if (idx >= 0) scannedSeals.splice(idx, 1);
+      lastScan = { key: '', at: 0 };
+      renderSealChecklist();
+    }
+
+    // Barcode Scanning Controls (continuous until all expected seals scanned or Stop)
     function startBarcodeScanner() {
       document.getElementById('reader').style.display = 'block';
       document.getElementById('btnStartScan').style.display = 'none';
@@ -499,13 +641,11 @@
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 150 } },
         (decodedText) => {
-          document.getElementById('scannedBarcode').value = decodedText;
-          verifyBarcodeMatch();
-          stopBarcodeScanner();
+          addScannedSeal(decodedText, 'camera');
+          const { missing } = sealStatus();
+          if (selectedPollingPlace.machines.length && !missing.length) stopBarcodeScanner();
         },
-        (error) => {
-          // ignore low-level frame read errors
-        }
+        () => { /* ignore low-level frame read errors */ }
       ).catch(err => {
         alert("Camera error: " + err);
         stopBarcodeScanner();
@@ -513,36 +653,15 @@
     }
 
     function stopBarcodeScanner() {
-      if (html5QrcodeScanner) {
-        html5QrcodeScanner.stop().then(() => {
-          html5QrcodeScanner.clear();
-          document.getElementById('reader').style.display = 'none';
-          document.getElementById('btnStartScan').style.display = 'inline-block';
-          document.getElementById('btnStopScan').style.display = 'none';
-        }).catch(err => console.warn(err));
-      }
-    }
-
-    function verifyBarcodeMatch() {
-      if (!selectedPollingPlace) return;
-
-      const scanned = document.getElementById('scannedBarcode').value.trim();
-      const expected = selectedPollingPlace.expected_barcode.trim();
-      const statusDiv = document.getElementById('barcodeMatchStatus');
-
-      if (!scanned) {
-        statusDiv.style.display = 'none';
-        return;
-      }
-
-      statusDiv.style.display = 'flex';
-      if (scanned === expected) {
-        statusDiv.className = 'alert alert-success';
-        statusDiv.innerHTML = `&#x2705; <strong>MATCH VERIFIED:</strong> Scanned seal code matches expected manifest (${escapeHtml(expected)}).`;
-      } else {
-        statusDiv.className = 'alert alert-warning';
-        statusDiv.innerHTML = `&#x26A0;&#xFE0F; <strong>BARCODE MISMATCH ALERT:</strong> Scanned code (${escapeHtml(scanned)}) does not match expected seal manifest (${escapeHtml(expected)}).`;
-      }
+      const scanner = html5QrcodeScanner;
+      if (!scanner) return;
+      html5QrcodeScanner = null;
+      const reset = () => {
+        document.getElementById('reader').style.display = 'none';
+        document.getElementById('btnStartScan').style.display = 'inline-block';
+        document.getElementById('btnStopScan').style.display = 'none';
+      };
+      scanner.stop().then(() => { scanner.clear(); reset(); }).catch(err => { console.warn(err); reset(); });
     }
 
     // Photo Capture Handling
@@ -586,28 +705,34 @@
 
     // Submit Delivery Record to Firestore
     async function submitDeliveryRecord() {
-      const scannedBarcode = document.getElementById('scannedBarcode').value.trim();
       const notes = document.getElementById('deliveryNotes').value.trim();
       const alertDiv = document.getElementById('deliveryAlert');
       const submitBtn = document.getElementById('btnSubmitDelivery');
 
-      if (!scannedBarcode) {
+      if (submitBtn.disabled) return; // already saving
+
+      if (!scannedSeals.length) {
         alertDiv.className = 'alert alert-danger';
-        alertDiv.textContent = 'Please scan or enter the seal barcode before submitting.';
+        alertDiv.textContent = 'Please scan or enter at least one seal barcode before submitting.';
         alertDiv.style.display = 'block';
         return;
       }
 
+      const { seals, unexpected, missing } = sealStatus();
+      if (missing.length && !confirm(`${seals.length - missing.length} of ${seals.length} seals scanned. Missing: ${missing.map(m => m.lid_sn).join(', ')}. Submit as INCOMPLETE?`)) {
+        return;
+      }
+      const matchStatus = unexpected.length ? 'MISMATCH' : (missing.length ? 'INCOMPLETE' : 'MATCH');
+
       submitBtn.disabled = true;
       submitBtn.textContent = 'Saving Record...';
 
-      const isMatch = (scannedBarcode === selectedPollingPlace.expected_barcode.trim());
       let photoUrl = '';
 
       try {
         // Upload photo to Firebase Storage if attached
         if (capturedPhotoBlob && currentAccount) {
-          const fileName = `photos/${currentAccount.uid}/${Date.now()}_${selectedPollingPlace.precinct}.jpg`;
+          const fileName = `photos/${currentAccount.uid}/${Date.now()}_${selectedPollingPlace.location_key}.jpg`;
           const storageRef = firebase.storage().ref().child(fileName);
           const snapshot = await storageRef.put(capturedPhotoBlob);
           photoUrl = await snapshot.ref.getDownloadURL();
@@ -617,12 +742,17 @@
         const deliveryRecord = {
           election_id: selectedElection.id,
           election_name: selectedElection.name,
-          precinct: selectedPollingPlace.precinct,
+          location_key: selectedPollingPlace.location_key,
           location_name: selectedPollingPlace.location_name,
           address: selectedPollingPlace.address,
-          scanned_barcode: scannedBarcode,
-          expected_barcode: selectedPollingPlace.expected_barcode,
-          match_status: isMatch ? 'MATCH' : 'MISMATCH',
+          precincts: selectedPollingPlace.precincts,
+          seals: seals.map(m => ({ cpn: m.cpn, precinct: m.precinct, machine: m.machine, serial: m.serial, expected: m.lid_sn, scanned: m.scanned })),
+          unexpected_seals: unexpected.map(u => ({ code: u.code, source: u.source, at: u.at })),
+          expected_count: seals.length,
+          scanned_count: seals.length - missing.length,
+          scanned_barcode: scannedSeals.map(x => x.code).join('|'),
+          expected_barcode: seals.map(m => m.lid_sn).join('|'),
+          match_status: matchStatus,
           notes: notes,
           photo_url: photoUrl,
           driver_email: currentAccount ? currentAccount.email : 'anonymous',
@@ -670,9 +800,24 @@
           snapshot.forEach(doc => {
             const data = doc.data();
             const dateStr = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : 'Pending Sync';
-            const statusBadge = data.match_status === 'MATCH' 
+            const statusBadge = data.match_status === 'MATCH'
               ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; MATCH</span>'
-              : '<span style="color: var(--danger-color); font-weight:700;">&#x26A0;&#xFE0F; MISMATCH</span>';
+              : data.match_status === 'INCOMPLETE'
+                ? '<span style="color: var(--warning-color); font-weight:700;">&#x26A0;&#xFE0F; INCOMPLETE</span>'
+                : '<span style="color: var(--danger-color); font-weight:700;">&#x26A0;&#xFE0F; MISMATCH</span>';
+
+            const precinctText = Array.isArray(data.precincts) && data.precincts.length
+              ? data.precincts.map(p => `${p.name} (${p.num})`).join(', ')
+              : (data.precinct ? 'Precinct ' + data.precinct : '');
+            let scannedCell, expectedCell;
+            if (Array.isArray(data.seals)) {
+              scannedCell = data.seals.filter(x => x.scanned).map(x => `<div><code>${escapeHtml(x.expected)}</code> &#x2705;</div>`).join('')
+                + (data.unexpected_seals || []).map(x => `<div><code>${escapeHtml(x.code)}</code> &#x26A0;&#xFE0F;</div>`).join('');
+              expectedCell = data.seals.map(x => `<div><code>${escapeHtml(x.expected)}</code> ${x.scanned ? '&#x2705;' : '&#x274C;'}</div>`).join('');
+            } else {
+              scannedCell = `<code>${escapeHtml(data.scanned_barcode)}</code>`;
+              expectedCell = `<code>${escapeHtml(data.expected_barcode)}</code>`;
+            }
 
             const photoLink = data.photo_url 
               ? `<a href="${data.photo_url}" target="_blank" rel="noopener noreferrer" class="map-link">View Photo</a>` 
@@ -681,9 +826,9 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td>${escapeHtml(dateStr)}</td>
-              <td><strong>Precinct ${escapeHtml(data.precinct)}</strong><br>${escapeHtml(data.location_name)}</td>
-              <td><code>${escapeHtml(data.scanned_barcode)}</code></td>
-              <td><code>${escapeHtml(data.expected_barcode)}</code></td>
+              <td><strong>${escapeHtml(data.location_name)}</strong><br>${escapeHtml(precinctText)}</td>
+              <td>${scannedCell}</td>
+              <td>${expectedCell}</td>
               <td>${statusBadge}</td>
               <td>${escapeHtml(data.driver_email)}</td>
               <td>${photoLink}</td>
@@ -706,7 +851,7 @@
             return;
           }
 
-          let csvContent = 'Timestamp,Election,Precinct,Location,Scanned Seal,Expected Seal,Status,Driver,Notes,Photo URL\n';
+          let csvContent = 'Timestamp,Election,Precinct,Location,Scanned Seal,Expected Seal,Expected Count,Scanned Count,Missing Seals,Unexpected Seals,Status,Driver,Notes,Photo URL\n';
 
           snapshot.forEach(doc => {
             const d = doc.data();
@@ -714,10 +859,14 @@
             const row = [
               dateStr,
               d.election_name || '',
-              d.precinct || '',
+              Array.isArray(d.precincts) ? d.precincts.map(p => `${p.name} (${p.num})`).join('; ') : (d.precinct || ''),
               d.location_name || '',
               d.scanned_barcode || '',
               d.expected_barcode || '',
+              d.expected_count != null ? d.expected_count : '',
+              d.scanned_count != null ? d.scanned_count : '',
+              Array.isArray(d.seals) ? d.seals.filter(x => !x.scanned).map(x => x.expected).join('|') : '',
+              Array.isArray(d.unexpected_seals) ? d.unexpected_seals.map(x => x.code).join('|') : '',
               d.match_status || '',
               d.driver_email || '',
               d.notes || '',

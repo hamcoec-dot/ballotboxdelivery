@@ -9,7 +9,7 @@ Hosted entirely as a static single-page application on **GitHub Pages**, backed 
 ## 📋 Features
 
 - **Mobile Camera Barcode Scanner:** Reads Code 128, Code 39, QR Code, Data Matrix seals via live camera (`html5-qrcode`).
-- **Manifest Barcode Verification:** Auto-verifies scanned barcode against known-good manifest in `polling_places.csv`. Shows green `MATCH` or red warning `MISMATCH`.
+- **Manifest Barcode Verification:** Scans every seal at a location against the per-election machine export (`machine_data.csv`). Shows `MATCH`, `INCOMPLETE`, or `MISMATCH`.
 - **Delivery Photograph Capture:** Integrates with native camera to capture and upload proof-of-delivery photos.
 - **GPS Timestamp Logging:** Automatically captures precise geolocation coordinates upon delivery submit.
 - **Offline Mode & Persistence:** Operates seamlessly offline via Service Worker caching and Firestore offline persistence.
@@ -66,13 +66,17 @@ Admins are an allowlist of Firebase Auth UIDs in the Firestore `admins` collecti
 
 ---
 
-## 📄 Managing Polling Place Barcode Manifests
+## 📄 Per-Election Data Ingest
 
-Before each election, update [`polling_places.csv`](polling_places.csv) with the expected seal barcodes:
+Each election, save the two election-office exports unchanged in the repo root and redeploy:
 
-```csv
-election_id,election_name,election_date,precinct,location_name,address,expected_barcode
-2026-08,August 2026 General,2026-08-06,01,Brainerd Recreation Center,1010 N Moore Rd Chattanooga TN 37411,SEAL-A001-2026
-```
+| Export | Save as | Used for |
+|---|---|---|
+| Machine data (e.g. `November26MachineData.csv`) | `machine_data.csv` | Election name/date, one seal per machine = `Ballot box lid SN` |
+| Precincts and polling places (e.g. `2611 Nov 26 Precincts and polling places.csv`) | `precincts.csv` | Building name + address per precinct |
 
-Commit the updated CSV file to update the live app manifest.
+- Machines join to precincts on `CPN` = `CountyPrecinctNum` (fallback: `Precinct` name). Rows with an empty lid SN are skipped.
+- A delivery stop is one physical building; all seals of every precinct in it are scanned in one delivery.
+- `precincts.csv` has unquoted commas in its address fields; the app parses it positionally, so do not hand-edit it.
+- Seal barcode must equal the lid SN (match is trimmed, case-insensitive).
+- Delivery status: `MATCH` (all seals scanned), `INCOMPLETE` (some missing), `MISMATCH` (unexpected seal scanned).

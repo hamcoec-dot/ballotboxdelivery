@@ -1,2 +1,5 @@
 /.claude
 /plans
+
+# Firebase emulator logs
+*-debug.log
