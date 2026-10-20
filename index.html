@@ -205,6 +205,27 @@
             </tbody>
           </table>
         </div>
+
+        <details id="archivedAudit" style="margin-top: 24px;">
+          <summary id="archivedAuditSummary" style="cursor: pointer; font-weight: 700;">Other / past elections (0)</summary>
+          <p style="font-size: 14px; color: var(--text-muted); margin: 8px 0;">Records that do not belong to the active election (test data, past elections). Not included in Export CSV.</p>
+          <div class="table-responsive">
+            <table id="auditArchivedTable">
+            <thead>
+              <tr>
+                <th scope="col">Timestamp</th>
+                <th scope="col">Precinct / Location</th>
+                <th scope="col">Scanned Seal</th>
+                <th scope="col">Expected Seal</th>
+                <th scope="col">Status</th>
+                <th scope="col">Driver</th>
+                <th scope="col">Photo</th>
+              </tr>
+            </thead>
+              <tbody id="auditArchivedBody"></tbody>
+            </table>
+          </div>
+        </details>
       </div>
     </section>
 
@@ -432,6 +453,7 @@
         .then(([machineText, precinctText]) => {
           manifestData = buildManifest(csvToObjects(machineText), parsePrecinctsCSV(precinctText));
           renderElections();
+          if (auditDocs.length) renderAudit();
         })
         .catch(err => {
           console.error('Could not load election data:', err);
@@ -784,6 +806,68 @@
     }
 
     // Load Admin Audit Log
+    let auditDocs = [];
+
+    function buildAuditRow(data) {
+      const dateStr = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : 'Pending Sync';
+      const statusBadge = data.match_status === 'MATCH'
+        ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; MATCH</span>'
+        : data.match_status === 'INCOMPLETE'
+          ? '<span style="color: var(--warning-color); font-weight:700;">&#x26A0;&#xFE0F; INCOMPLETE</span>'
+          : '<span style="color: var(--danger-color); font-weight:700;">&#x26A0;&#xFE0F; MISMATCH</span>';
+
+      const precinctText = Array.isArray(data.precincts) && data.precincts.length
+        ? data.precincts.map(p => `${p.name} (${p.num})`).join(', ')
+        : (data.precinct ? 'Precinct ' + data.precinct : '');
+      let scannedCell, expectedCell;
+      if (Array.isArray(data.seals)) {
+        scannedCell = data.seals.filter(x => x.scanned).map(x => `<div><code>${escapeHtml(x.expected)}</code> &#x2705;</div>`).join('')
+          + (data.unexpected_seals || []).map(x => `<div><code>${escapeHtml(x.code)}</code> &#x26A0;&#xFE0F;</div>`).join('');
+        expectedCell = data.seals.map(x => `<div><code>${escapeHtml(x.expected)}</code> ${x.scanned ? '&#x2705;' : '&#x274C;'}</div>`).join('');
+      } else {
+        scannedCell = `<code>${escapeHtml(data.scanned_barcode)}</code>`;
+        expectedCell = `<code>${escapeHtml(data.expected_barcode)}</code>`;
+      }
+
+      const photoLink = data.photo_url
+        ? `<a href="${escapeHtml(data.photo_url)}" target="_blank" rel="noopener noreferrer" class="map-link">View Photo</a>`
+        : 'None';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(dateStr)}</td>
+        <td><strong>${escapeHtml(data.location_name)}</strong><br>${escapeHtml(precinctText)}${data.election_name ? `<br><small>${escapeHtml(data.election_name)}</small>` : ''}</td>
+        <td>${scannedCell}</td>
+        <td>${expectedCell}</td>
+        <td>${statusBadge}</td>
+        <td>${escapeHtml(data.driver_email)}</td>
+        <td>${photoLink}</td>
+      `;
+      return tr;
+    }
+
+    // Active election = one present in the loaded manifest. If the manifest is not loaded, show everything.
+    function splitAuditDocs() {
+      const activeIds = new Set(manifestData.map(m => m.election_id));
+      const active = [], archived = [];
+      auditDocs.forEach(d => (!activeIds.size || activeIds.has(d.election_id) ? active : archived).push(d));
+      return { active, archived };
+    }
+
+    function renderAudit() {
+      const tbody = document.getElementById('auditTableBody');
+      const archBody = document.getElementById('auditArchivedBody');
+      tbody.innerHTML = '';
+      archBody.innerHTML = '';
+      const { active, archived } = splitAuditDocs();
+
+      active.forEach(d => tbody.appendChild(buildAuditRow(d)));
+      archived.forEach(d => archBody.appendChild(buildAuditRow(d)));
+      if (!active.length) tbody.innerHTML = '<tr><td colspan="7">No delivery records for the active election.</td></tr>';
+      document.getElementById('archivedAuditSummary').textContent = `Other / past elections (${archived.length})`;
+      document.getElementById('archivedAudit').style.display = archived.length ? '' : 'none';
+    }
+
     function loadAuditLog() {
       const tbody = document.getElementById('auditTableBody');
       tbody.innerHTML = '<tr><td colspan="7">Loading custody records...</td></tr>';
@@ -791,50 +875,8 @@
       firebase.firestore().collection('deliveries')
         .orderBy('timestamp', 'desc')
         .onSnapshot(snapshot => {
-          tbody.innerHTML = '';
-          if (snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="7">No delivery records found.</td></tr>';
-            return;
-          }
-
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            const dateStr = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : 'Pending Sync';
-            const statusBadge = data.match_status === 'MATCH'
-              ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; MATCH</span>'
-              : data.match_status === 'INCOMPLETE'
-                ? '<span style="color: var(--warning-color); font-weight:700;">&#x26A0;&#xFE0F; INCOMPLETE</span>'
-                : '<span style="color: var(--danger-color); font-weight:700;">&#x26A0;&#xFE0F; MISMATCH</span>';
-
-            const precinctText = Array.isArray(data.precincts) && data.precincts.length
-              ? data.precincts.map(p => `${p.name} (${p.num})`).join(', ')
-              : (data.precinct ? 'Precinct ' + data.precinct : '');
-            let scannedCell, expectedCell;
-            if (Array.isArray(data.seals)) {
-              scannedCell = data.seals.filter(x => x.scanned).map(x => `<div><code>${escapeHtml(x.expected)}</code> &#x2705;</div>`).join('')
-                + (data.unexpected_seals || []).map(x => `<div><code>${escapeHtml(x.code)}</code> &#x26A0;&#xFE0F;</div>`).join('');
-              expectedCell = data.seals.map(x => `<div><code>${escapeHtml(x.expected)}</code> ${x.scanned ? '&#x2705;' : '&#x274C;'}</div>`).join('');
-            } else {
-              scannedCell = `<code>${escapeHtml(data.scanned_barcode)}</code>`;
-              expectedCell = `<code>${escapeHtml(data.expected_barcode)}</code>`;
-            }
-
-            const photoLink = data.photo_url 
-              ? `<a href="${data.photo_url}" target="_blank" rel="noopener noreferrer" class="map-link">View Photo</a>` 
-              : 'None';
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${escapeHtml(dateStr)}</td>
-              <td><strong>${escapeHtml(data.location_name)}</strong><br>${escapeHtml(precinctText)}</td>
-              <td>${scannedCell}</td>
-              <td>${expectedCell}</td>
-              <td>${statusBadge}</td>
-              <td>${escapeHtml(data.driver_email)}</td>
-              <td>${photoLink}</td>
-            `;
-            tbody.appendChild(tr);
-          });
+          auditDocs = snapshot.docs.map(doc => doc.data());
+          renderAudit();
         }, err => {
           tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger-color);">Error loading records: ${escapeHtml(err.message)}</td></tr>`;
         });
@@ -842,50 +884,45 @@
 
     // CSV Export Feature (Playbook §7)
     function exportCustodyCSV() {
-      firebase.firestore().collection('deliveries')
-        .orderBy('timestamp', 'desc')
-        .get()
-        .then(snapshot => {
-          if (snapshot.empty) {
-            alert('No custody records available to export.');
-            return;
-          }
+      const rows = splitAuditDocs().active; // same list shown on the page
+      if (!rows.length) {
+        alert('No custody records available to export.');
+        return;
+      }
 
-          let csvContent = 'Timestamp,Election,Precinct,Location,Scanned Seal,Expected Seal,Expected Count,Scanned Count,Missing Seals,Unexpected Seals,Status,Driver,Notes,Photo URL\n';
+      let csvContent = 'Timestamp,Election,Precinct,Location,Scanned Seal,Expected Seal,Expected Count,Scanned Count,Missing Seals,Unexpected Seals,Status,Driver,Notes,Photo URL\n';
 
-          snapshot.forEach(doc => {
-            const d = doc.data();
-            const dateStr = d.timestamp ? new Date(d.timestamp.seconds * 1000).toISOString() : '';
-            const row = [
-              dateStr,
-              d.election_name || '',
-              Array.isArray(d.precincts) ? d.precincts.map(p => `${p.name} (${p.num})`).join('; ') : (d.precinct || ''),
-              d.location_name || '',
-              d.scanned_barcode || '',
-              d.expected_barcode || '',
-              d.expected_count != null ? d.expected_count : '',
-              d.scanned_count != null ? d.scanned_count : '',
-              Array.isArray(d.seals) ? d.seals.filter(x => !x.scanned).map(x => x.expected).join('|') : '',
-              Array.isArray(d.unexpected_seals) ? d.unexpected_seals.map(x => x.code).join('|') : '',
-              d.match_status || '',
-              d.driver_email || '',
-              d.notes || '',
-              d.photo_url || ''
-            ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+      rows.forEach(d => {
+        const dateStr = d.timestamp ? new Date(d.timestamp.seconds * 1000).toISOString() : '';
+        const row = [
+          dateStr,
+          d.election_name || '',
+          Array.isArray(d.precincts) ? d.precincts.map(p => `${p.name} (${p.num})`).join('; ') : (d.precinct || ''),
+          d.location_name || '',
+          d.scanned_barcode || '',
+          d.expected_barcode || '',
+          d.expected_count != null ? d.expected_count : '',
+          d.scanned_count != null ? d.scanned_count : '',
+          Array.isArray(d.seals) ? d.seals.filter(x => !x.scanned).map(x => x.expected).join('|') : '',
+          Array.isArray(d.unexpected_seals) ? d.unexpected_seals.map(x => x.code).join('|') : '',
+          d.match_status || '',
+          d.driver_email || '',
+          d.notes || '',
+          d.photo_url || ''
+        ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
 
-            csvContent += row + '\n';
-          });
+        csvContent += row + '\n';
+      });
 
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.setAttribute('href', url);
-          link.setAttribute('download', `HCEC_ChainOfCustody_${new Date().toISOString().slice(0,10)}.csv`);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        })
-        .catch(err => alert('Failed to generate CSV export: ' + err.message));
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `HCEC_ChainOfCustody_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
 
     // Utility: HTML Escaping
