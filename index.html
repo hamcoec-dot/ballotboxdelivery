@@ -109,7 +109,7 @@
           </button>
         </div>
 
-        <details id="contactsBox" style="margin-bottom: 16px; display: none;">
+        <details id="contactsBox" open style="margin-bottom: 16px; display: none;">
           <summary id="contactsSummary" style="cursor: pointer; font-weight: 700;">Contacts</summary>
           <div id="contactsList" style="font-size: 14px; margin-top: 8px;"></div>
         </details>
@@ -640,7 +640,7 @@
     function renderContacts(contacts) {
       const box = document.getElementById('contactsBox');
       if (!contacts || !contacts.length) { box.style.display = 'none'; return; }
-      box.style.display = '';
+      box.style.display = ''; box.open = true;
       const count = contacts.filter(c => !c.startsWith('\u2014')).length;
       document.getElementById('contactsSummary').textContent = `Contacts (${count})`;
       document.getElementById('contactsList').innerHTML = contacts.map(c => c.startsWith('\u2014')
