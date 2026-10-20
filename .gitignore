@@ -3,3 +3,6 @@
 
 # Firebase emulator logs
 *-debug.log
+
+*.csv
+functions/node_modules/

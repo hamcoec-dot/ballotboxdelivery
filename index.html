@@ -13,6 +13,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
 
   <!-- HTML5 QR Code Scanner CDN -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -30,6 +31,7 @@
     </div>
     <div id="userBadge" class="user-badge" style="display: none;">
       <span id="userEmailText"></span>
+      <span id="queueBadge" role="button" tabindex="0" onclick="retryQueue()" style="display:none; font-size:12px; background:#b45309; color:#fff; padding:2px 8px; border-radius:10px; cursor:pointer;"></span>
       <button type="button" class="btn btn-small btn-outline" style="color: #ffffff !important; border-color: #ffffff !important;" onclick="appLogout()" aria-label="Sign out of account">
         Sign Out
       </button>
@@ -174,6 +176,28 @@
 
     <!-- VIEW 5: ADMIN / HISTORY VIEW -->
     <section id="viewAdmin" class="view-section">
+      <div class="card" style="margin-bottom: 16px;">
+        <details id="importCard">
+          <summary style="cursor: pointer; font-weight: 700;" onclick="loadElectionList()">Import Election Data</summary>
+          <p style="font-size: 14px; color: var(--text-muted); margin: 8px 0 12px;">Upload the two election-office exports. Seal numbers are stored server-side only and are never sent to drivers. Importing makes that election the active one.</p>
+          <div class="form-group">
+            <label for="importMachine">Machine data export (CSV)</label>
+            <input type="file" id="importMachine" accept=".csv,text/csv" onchange="invalidateImportPreview()">
+          </div>
+          <div class="form-group">
+            <label for="importPrecinct">Precincts and polling places export (CSV)</label>
+            <input type="file" id="importPrecinct" accept=".csv,text/csv" onchange="invalidateImportPreview()">
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+            <button type="button" id="btnImportPreview" class="btn btn-small btn-secondary" onclick="runImport(false)">Preview</button>
+            <button type="button" id="btnImportPublish" class="btn btn-small" onclick="runImport(true)" disabled>Publish</button>
+          </div>
+          <div id="importResult" aria-live="polite"></div>
+          <h4 style="margin: 12px 0 4px;">Elections</h4>
+          <div id="electionList" style="font-size: 14px;">Open this section to load.</div>
+        </details>
+      </div>
+
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
           <h2 class="card-title" style="margin-bottom: 0 !important;">Chain of Custody Audit Log</h2>
@@ -250,14 +274,15 @@
 
     // Initialize Auth Listener
     window.addEventListener('DOMContentLoaded', () => {
-      loadManifestCSV();
-
       if (typeof firebase !== 'undefined') {
         firebase.auth().onAuthStateChanged((user) => {
           if (user) {
             currentAccount = user;
             document.getElementById('userEmailText').textContent = user.email;
             document.getElementById('userBadge').style.display = 'flex';
+            loadElections();
+            flushQueue();
+            updateQueueBadge();
             
             // Admin allowlist lookup (UX routing only; Firestore rules enforce access)
             firebase.firestore().collection('admins').doc(user.uid).get()
@@ -272,6 +297,8 @@
               .catch(() => showView('viewElections')); // fail closed
           } else {
             currentAccount = null;
+            manifestData = [];
+            auditDocs = [];
             document.getElementById('userBadge').style.display = 'none';
             showView('viewLogin');
           }
@@ -293,174 +320,45 @@
       }
     });
 
-    // Seal scanning state
+    // Seal scanning state. Each scan: { code, source, at, state: 'pending'|'match'|'nomatch'|'blocked', slot }
     let scannedSeals = [];
     let lastScan = { key: '', at: 0 };
     let toastTimer = null;
 
     const normSeal = (v) => String(v || '').trim().toUpperCase();
 
-    // Quote-aware CSV parser -> array of field arrays (handles BOM, CRLF, "" escapes)
-    function parseCSV(text) {
-      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-      const rows = [];
-      let row = [], field = '', inQuotes = false;
-      for (let i = 0; i < text.length; i++) {
-        const c = text[i];
-        if (inQuotes) {
-          if (c === '"') {
-            if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
-          } else field += c;
-        } else if (c === '"') inQuotes = true;
-        else if (c === ',') { row.push(field); field = ''; }
-        else if (c === '\n' || c === '\r') {
-          if (c === '\r' && text[i + 1] === '\n') i++;
-          row.push(field); field = '';
-          if (row.some(f => f.trim() !== '')) rows.push(row);
-          row = [];
-        } else field += c;
-      }
-      row.push(field);
-      if (row.some(f => f.trim() !== '')) rows.push(row);
-      return rows;
-    }
-
-    function csvToObjects(text) {
-      const rows = parseCSV(text);
-      if (rows.length < 2) return [];
-      const headers = rows[0].map(h => h.trim());
-      return rows.slice(1).map(r => {
-        const o = {};
-        headers.forEach((h, i) => { if (!(h in o)) o[h] = (r[i] || '').trim(); });
-        return o;
-      });
-    }
-
-    // Precincts export has unquoted commas inside both address fields, so parse positionally.
-    function parsePrecinctsCSV(text) {
-      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-      const lines = text.split(/\r?\n/).filter(l => l.trim());
-      if (lines.length < 2) return [];
-      const headers = lines[0].split(',').map(h => h.trim());
-      const iName = headers.indexOf('PollingPlaceName');
-      const iMail = headers.indexOf('PollingPlaceMailingAddress');
-      const iCpn = headers.indexOf('CountyPrecinctNum');
-      const iPrec = headers.indexOf('PrecinctName');
-      if (iName < 0 || iMail < 0 || iCpn < 0 || iPrec < 0) throw new Error('precincts.csv: unexpected header');
-      const head = iName + 1;
-      const tail = headers.length - (iMail + 1);
-      const zipRe = /\b[A-Z]{2}\s+\d{5}(-\d{4})?\s*$/;
-      const clean = (s) => s.replace(/\s*,\s*/g, ', ').replace(/\s+/g, ' ').trim();
-
-      return lines.slice(1).map(line => {
-        const f = line.split(',');
-        const middle = f.slice(head, f.length - tail);
-        const split = middle.findIndex(p => zipRe.test(p.trim()));
-        let address;
-        if (split < 0) {
-          console.warn('precincts.csv: no ZIP found in address for line:', line);
-          address = middle.slice(0, Math.ceil(middle.length / 2)).join(',');
-        } else {
-          address = middle.slice(0, split + 1).join(',');
-        }
-        return {
-          num: f[iCpn].trim(),
-          name: f[iPrec].trim(),
-          building: f[iName].trim(),
-          address: clean(address)
-        };
-      });
-    }
-
     function titleCase(s) {
       return s.toLowerCase().replace(/(^|[\s(\-\/&])([a-z])/g, (m, p, c) => p + c.toUpperCase());
     }
-    function slugify(s) {
-      return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    }
 
-    // Build one entry per physical building from the two exports
-    function buildManifest(machineRows, precinctRows) {
-      const first = (k) => (machineRows.find(r => r[k]) || {})[k] || '';
-      const doe = first('DOE');
-      const dm = doe.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      const electionDate = dm ? `${dm[3]}-${dm[1].padStart(2, '0')}-${dm[2].padStart(2, '0')}` : doe;
-      if (!dm) throw new Error('machine_data.csv: missing or invalid DOE (election date)');
-      const election = {
-        election_id: electionDate.slice(0, 7),
-        election_name: first('ElectionName') || 'Election',
-        election_date: electionDate
-      };
-
-      const buildings = new Map();
-      const byCpn = new Map();
-      const byName = new Map();
-      precinctRows.forEach(p => {
-        const key = slugify(p.building + '|' + p.address);
-        if (!buildings.has(key)) {
-          buildings.set(key, Object.assign({}, election, {
-            location_key: key,
-            location_name: titleCase(p.building),
-            location_name_raw: p.building,
-            address: p.address,
-            precincts: [],
-            machines: []
-          }));
+    // Load the active election(s) and their locations (labels only: expected seal numbers never leave the server).
+    async function loadElections() {
+      const container = document.getElementById('electionsList');
+      try {
+        const db = firebase.firestore();
+        const elections = await db.collection('elections').where('active', '==', true).get();
+        const data = [];
+        for (const e of elections.docs) {
+          const ed = e.data();
+          const locs = await db.collection('elections').doc(e.id).collection('locations').get();
+          locs.forEach(l => {
+            const x = l.data();
+            data.push({
+              election_id: e.id, election_name: ed.name, election_date: ed.date,
+              location_key: x.location_key, location_name: x.location_name, address: x.address || '',
+              precincts: x.precincts || [], slots: x.slots || []
+            });
+          });
         }
-        const b = buildings.get(key);
-        b.precincts.push({ num: p.num, name: titleCase(p.name) });
-        byCpn.set(p.num, b);
-        byName.set(p.name.toUpperCase(), b);
-      });
-
-      const unassigned = [];
-      machineRows.forEach(m => {
-        const lid = m['Ballot box lid SN'];
-        if (!lid) return;
-        const entry = {
-          cpn: m['CPN'], precinct: m['Precinct'], machine: m['Machine'],
-          serial: m['Serial Number'], lid_sn: lid
-        };
-        const b = (m['CPN'] && byCpn.get(m['CPN'])) || byName.get((m['Precinct'] || '').toUpperCase());
-        if (b) b.machines.push(entry);
-        else { console.warn('Unassigned machine (no precinct match):', entry); unassigned.push(entry); }
-      });
-
-      const result = Array.from(buildings.values());
-      result.forEach(b => {
-        if (!b.machines.length) console.warn('No machines for building:', b.location_name);
-      });
-      if (unassigned.length) {
-        result.push(Object.assign({}, election, {
-          location_key: 'unassigned-machines',
-          location_name: 'Unassigned Machines',
-          location_name_raw: 'UNASSIGNED MACHINES',
-          address: '',
-          precincts: [],
-          machines: unassigned
-        }));
+        data.sort((a, b) => a.location_name.localeCompare(b.location_name));
+        manifestData = data;
+        renderElections();
+        if (auditDocs.length) renderAudit();
+      } catch (err) {
+        console.error('Could not load election data:', err);
+        manifestData = [];
+        container.innerHTML = `<div class="alert alert-danger">Could not load election data: ${escapeHtml(err.message)}. Check your connection and reload.</div>`;
       }
-      return result;
-    }
-
-    function loadManifestCSV() {
-      const bust = '?v=' + Date.now();
-      const get = (u) => fetch(u + bust, { cache: 'no-store' }).then(res => {
-        if (!res.ok) throw new Error(u + ' HTTP ' + res.status);
-        return res.text();
-      });
-      Promise.all([get('./machine_data.csv'), get('./precincts.csv')])
-        .then(([machineText, precinctText]) => {
-          manifestData = buildManifest(csvToObjects(machineText), parsePrecinctsCSV(precinctText));
-          renderElections();
-          if (auditDocs.length) renderAudit();
-        })
-        .catch(err => {
-          console.error('Could not load election data:', err);
-          manifestData = [];
-          document.getElementById('electionsList').innerHTML =
-            `<div class="alert alert-danger">Could not load election data: ${escapeHtml(err.message)}. Check your connection and reload.</div>`;
-        });
     }
 
     // View Navigation Router
@@ -517,7 +415,7 @@
 
       manifestData.filter(item => item.election_id === selectedElection.id).forEach(item => {
         const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(item.address)}`;
-        const noSeals = item.machines.length === 0;
+        const noSeals = item.slots.length === 0;
         const card = document.createElement('div');
         card.className = 'flex-card';
         card.innerHTML = `
@@ -527,7 +425,7 @@
             <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(item.address)}</a>
           </p>` : ''}
           <p style="font-size: 14px; margin-bottom: 8px;${noSeals ? ' color: var(--danger-color);' : ''}">
-            ${noSeals ? '&#x26A0;&#xFE0F; No seals on file' : `&#x1F512; ${item.machines.length} seal${item.machines.length === 1 ? '' : 's'}`}
+            ${noSeals ? '&#x26A0;&#xFE0F; No seals on file' : `&#x1F512; ${item.slots.length} seal${item.slots.length === 1 ? '' : 's'}`}
           </p>
         `;
         const link = card.querySelector('.map-link');
@@ -579,39 +477,51 @@
       showView('viewDelivery');
     }
 
-    // Seal checklist
+    // Seal checklist. A slot counts as scanned only after the server confirmed the code (state 'match').
     function sealStatus() {
-      const expectedKeys = new Set(selectedPollingPlace.machines.map(m => normSeal(m.lid_sn)));
-      const scannedKeys = new Set(scannedSeals.map(s => normSeal(s.code)));
-      const seals = selectedPollingPlace.machines.map(m => Object.assign({}, m, { scanned: scannedKeys.has(normSeal(m.lid_sn)) }));
-      const unexpected = scannedSeals.filter(s => !expectedKeys.has(normSeal(s.code)));
-      return { seals, unexpected, missing: seals.filter(s => !s.scanned) };
+      const seals = selectedPollingPlace.slots.map(s => Object.assign({}, s, {
+        scanned: scannedSeals.some(x => x.state === 'match' && x.slot === s.slot)
+      }));
+      return {
+        seals,
+        missing: seals.filter(s => !s.scanned),
+        unexpected: scannedSeals.filter(x => x.state === 'nomatch'),
+        pending: scannedSeals.filter(x => x.state === 'pending' || x.state === 'blocked')
+      };
     }
+
+    // Driver-facing label: never include the expected seal number
+    const sealLabel = (s) => [titleCase(s.precinct || ''), s.machine ? 'Machine ' + s.machine : '', s.serial].filter(Boolean).join(' · ');
 
     function renderSealChecklist() {
       if (!selectedPollingPlace) return;
-      const { seals, unexpected } = sealStatus();
+      const { seals, unexpected, pending } = sealStatus();
       const done = seals.filter(s => s.scanned).length;
-      document.getElementById('sealProgress').textContent = `${done} of ${seals.length} seals scanned`;
+      document.getElementById('sealProgress').textContent =
+        `${done} of ${seals.length} seals verified` + (pending.length ? ` (${pending.length} awaiting verification)` : '');
 
       let html = seals.map(s => `
         <div style="display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px solid var(--border-color);">
           <div>
-            <div style="font-weight:600;">${escapeHtml([titleCase(s.precinct || ''), s.machine ? 'Machine ' + s.machine : '', s.serial].filter(Boolean).join(' · '))}</div>
-            <code>${escapeHtml(s.lid_sn)}</code>
+            <div style="font-weight:600;">${escapeHtml(sealLabel(s))}</div>
           </div>
-          <div style="white-space:nowrap;">${s.scanned ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; Scanned</span>' : '<span style="color: var(--text-muted);">Pending</span>'}</div>
+          <div style="white-space:nowrap;">${s.scanned ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; Verified</span>' : '<span style="color: var(--text-muted);">Pending</span>'}</div>
         </div>`).join('');
       if (!seals.length) html = '<p style="color: var(--danger-color);">No expected seals on file for this location.</p>';
 
-      if (unexpected.length) {
-        html += '<h4 style="margin:12px 0 4px;">&#x26A0;&#xFE0F; Extra / unexpected seals</h4>';
-        html += unexpected.map(s => `
+      const rows = [];
+      scannedSeals.forEach((s, i) => {
+        if (s.state === 'match') return;
+        const msg = s.state === 'nomatch' ? '&#x26A0;&#xFE0F; Not on file for this location'
+          : s.state === 'blocked' ? '&#x26D4; Too many attempts &mdash; contact the office'
+          : '&#x23F3; Will verify when online';
+        rows.push(`
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0;">
-            <code>${escapeHtml(s.code)}</code>
-            <button type="button" class="btn btn-small btn-outline" onclick="removeScannedSeal(${scannedSeals.indexOf(s)})" aria-label="Remove seal ${escapeHtml(s.code)}">Remove</button>
-          </div>`).join('');
-      }
+            <div><code>${escapeHtml(s.code)}</code><div style="font-size:13px;">${msg}</div></div>
+            <button type="button" class="btn btn-small btn-outline" onclick="removeScannedSeal(${i})" aria-label="Remove seal ${escapeHtml(s.code)}">Remove</button>
+          </div>`);
+      });
+      if (rows.length) html += '<h4 style="margin:12px 0 4px;">Scans needing attention</h4>' + rows.join('');
       document.getElementById('sealChecklist').innerHTML = html;
     }
 
@@ -621,6 +531,40 @@
       t.style.display = 'flex';
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2500);
+    }
+
+    // Ask the server whether this scan is one of the location's seals.
+    function verifyScan(entry) {
+      if (!navigator.onLine || !selectedPollingPlace || entry.verifying) return entry.promise;
+      entry.promise = doVerifyScan(entry);
+      return entry.promise;
+    }
+
+    async function doVerifyScan(entry) {
+      entry.verifying = true;
+      try {
+        const res = await verifySealFn({
+          electionId: selectedElection.id, locationKey: selectedPollingPlace.location_key, code: entry.code
+        });
+        if (!scannedSeals.includes(entry)) return;
+        if (res.data.match) { entry.state = 'match'; entry.slot = res.data.slot; }
+        else entry.state = 'nomatch';
+      } catch (err) {
+        if (err.code === 'functions/resource-exhausted') {
+          entry.state = 'blocked';
+          showSealToast(err.message);
+        } else {
+          console.warn('verifySeal failed, will retry when online:', err);
+        }
+      } finally {
+        entry.verifying = false;
+      }
+      renderSealChecklist();
+      maybeStopScanner();
+    }
+
+    function reverifyPending() {
+      scannedSeals.filter(s => s.state === 'pending').forEach(verifyScan);
     }
 
     function addScannedSeal(code, source) {
@@ -634,8 +578,10 @@
         showSealToast(`Seal ${code} already scanned.`);
         return false;
       }
-      scannedSeals.push({ code, source, at: new Date().toISOString() });
+      const entry = { code, source, at: new Date().toISOString(), state: 'pending', slot: null };
+      scannedSeals.push(entry);
       renderSealChecklist();
+      verifyScan(entry);
       return true;
     }
 
@@ -652,6 +598,12 @@
       renderSealChecklist();
     }
 
+    function maybeStopScanner() {
+      if (html5QrcodeScanner && selectedPollingPlace && selectedPollingPlace.slots.length && !sealStatus().missing.length) {
+        stopBarcodeScanner();
+      }
+    }
+
     // Barcode Scanning Controls (continuous until all expected seals scanned or Stop)
     function startBarcodeScanner() {
       document.getElementById('reader').style.display = 'block';
@@ -664,8 +616,6 @@
         { fps: 10, qrbox: { width: 250, height: 150 } },
         (decodedText) => {
           addScannedSeal(decodedText, 'camera');
-          const { missing } = sealStatus();
-          if (selectedPollingPlace.machines.length && !missing.length) stopBarcodeScanner();
         },
         () => { /* ignore low-level frame read errors */ }
       ).catch(err => {
@@ -725,83 +675,237 @@
       firebase.auth().signOut();
     }
 
-    // Submit Delivery Record to Firestore
+    // ---- Cloud Functions + offline queue -------------------------------------------------------
+    const callFn = (name, data, opts) => fbFunctions.httpsCallable(name, opts)(data);
+    const verifySealFn = (data) => callFn('verifySeal', data);
+
+    const isNetworkError = (err) => !navigator.onLine
+      || ['functions/unavailable', 'functions/deadline-exceeded', 'storage/retry-limit-exceeded', 'storage/unknown'].includes(err && err.code)
+      || (err && err.name === 'TypeError');
+
+    const IDB_NAME = 'hcec-queue', IDB_STORE = 'pendingDeliveries';
+    function idbOpen() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE, { keyPath: 'clientId' });
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function idbRun(mode, fn) {
+      const db = await idbOpen();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, mode);
+        const req = fn(tx.objectStore(IDB_STORE));
+        tx.oncomplete = () => { db.close(); resolve(req && req.result); };
+        tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); };
+      });
+    }
+    const idbAll = () => idbRun('readonly', s => s.getAll());
+    const idbPut = (v) => idbRun('readwrite', s => s.put(v));
+    const idbDelete = (k) => idbRun('readwrite', s => s.delete(k));
+
+    async function updateQueueBadge() {
+      const badge = document.getElementById('queueBadge');
+      try {
+        const mine = currentAccount ? (await idbAll()).filter(x => x.uid === currentAccount.uid) : [];
+        const failed = mine.filter(x => x.failed).length;
+        badge.style.display = mine.length ? 'inline-block' : 'none';
+        badge.textContent = `${mine.length - failed} waiting to sync` + (failed ? `, ${failed} failed (tap to retry)` : '');
+      } catch (e) {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Upload the photo (if any) and have the server record the delivery. Safe to retry: clientId is idempotent.
+    async function sendDelivery(entry) {
+      const payload = Object.assign({}, entry.payload);
+      if (entry.photo) {
+        const path = `photos/${entry.uid}/${entry.clientId}.jpg`;
+        await firebase.storage().ref().child(path).put(entry.photo, { contentType: entry.photo.type || 'image/jpeg' });
+        payload.photoPath = path;
+      }
+      return (await callFn('submitDelivery', payload)).data;
+    }
+
+    let flushing = false;
+    async function flushQueue() {
+      if (flushing || !navigator.onLine || !currentAccount) return;
+      flushing = true;
+      try {
+        const items = (await idbAll()).filter(x => x.uid === currentAccount.uid && !x.failed);
+        for (const it of items) {
+          try {
+            await sendDelivery(it);
+            await idbDelete(it.clientId);
+          } catch (err) {
+            if (isNetworkError(err)) break;
+            console.error('Queued delivery rejected:', err);
+            it.failed = err.message;
+            await idbPut(it);
+          }
+        }
+      } catch (e) {
+        console.warn('Queue flush failed:', e);
+      } finally {
+        flushing = false;
+        updateQueueBadge();
+      }
+    }
+
+    async function retryQueue() {
+      try {
+        const items = (await idbAll()).filter(x => x.failed);
+        for (const it of items) { delete it.failed; await idbPut(it); }
+      } catch (e) { console.warn(e); }
+      flushQueue();
+    }
+
+    window.addEventListener('online', () => { reverifyPending(); flushQueue(); });
+
+    // Submit Delivery Record (the server verifies the scans and sets the status)
+    let submitting = false;
     async function submitDeliveryRecord() {
+      if (submitting) return;
+      submitting = true;
+      try { await submitDeliveryInner(); } finally { submitting = false; }
+    }
+
+    async function submitDeliveryInner() {
       const notes = document.getElementById('deliveryNotes').value.trim();
       const alertDiv = document.getElementById('deliveryAlert');
       const submitBtn = document.getElementById('btnSubmitDelivery');
+      const show = (cls, html) => { alertDiv.className = 'alert ' + cls; alertDiv.innerHTML = html; alertDiv.style.display = 'block'; };
 
       if (submitBtn.disabled) return; // already saving
 
       if (!scannedSeals.length) {
-        alertDiv.className = 'alert alert-danger';
-        alertDiv.textContent = 'Please scan or enter at least one seal barcode before submitting.';
-        alertDiv.style.display = 'block';
+        show('alert-danger', 'Please scan or enter at least one seal barcode before submitting.');
+        return;
+      }
+      if (!currentAccount) {
+        show('alert-danger', 'Please sign in again before submitting.');
         return;
       }
 
-      const { seals, unexpected, missing } = sealStatus();
-      if (missing.length && !confirm(`${seals.length - missing.length} of ${seals.length} seals scanned. Missing: ${missing.map(m => m.lid_sn).join(', ')}. Submit as INCOMPLETE?`)) {
-        return;
+      // Let in-flight verifications finish (up to 5s) so the prompt reflects real state
+      await Promise.race([
+        Promise.all(scannedSeals.filter(s => s.state === 'pending' && s.promise).map(s => s.promise)),
+        new Promise(r => setTimeout(r, 5000))
+      ]);
+
+      const { seals, missing, pending } = sealStatus();
+      if (missing.length) {
+        const text = pending.length
+          ? `${pending.length} scan(s) are not verified yet (could not reach the server). The server will verify them when this is saved and set the final status. Not yet verified: ${missing.map(sealLabel).join('; ')}. Submit anyway?`
+          : `${seals.length - missing.length} of ${seals.length} seals scanned. Missing: ${missing.map(sealLabel).join('; ')}. Submit as INCOMPLETE?`;
+        if (!confirm(text)) return;
       }
-      const matchStatus = unexpected.length ? 'MISMATCH' : (missing.length ? 'INCOMPLETE' : 'MATCH');
+
+      const clientId = (crypto.randomUUID ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+      const entry = {
+        clientId, uid: currentAccount.uid, queuedAt: new Date().toISOString(),
+        locationName: selectedPollingPlace.location_name,
+        photo: capturedPhotoBlob || null,
+        payload: {
+          clientId, electionId: selectedElection.id, locationKey: selectedPollingPlace.location_key,
+          scans: scannedSeals.map(s => ({ code: s.code, source: s.source, at: s.at })),
+          notes, gps: currentGps
+        }
+      };
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Saving Record...';
-
-      let photoUrl = '';
-
+      let done = false;
       try {
-        // Upload photo to Firebase Storage if attached
-        if (capturedPhotoBlob && currentAccount) {
-          const fileName = `photos/${currentAccount.uid}/${Date.now()}_${selectedPollingPlace.location_key}.jpg`;
-          const storageRef = firebase.storage().ref().child(fileName);
-          const snapshot = await storageRef.put(capturedPhotoBlob);
-          photoUrl = await snapshot.ref.getDownloadURL();
-        }
-
-        // Save delivery record to Firestore
-        const deliveryRecord = {
-          election_id: selectedElection.id,
-          election_name: selectedElection.name,
-          location_key: selectedPollingPlace.location_key,
-          location_name: selectedPollingPlace.location_name,
-          address: selectedPollingPlace.address,
-          precincts: selectedPollingPlace.precincts,
-          seals: seals.map(m => ({ cpn: m.cpn, precinct: m.precinct, machine: m.machine, serial: m.serial, expected: m.lid_sn, scanned: m.scanned })),
-          unexpected_seals: unexpected.map(u => ({ code: u.code, source: u.source, at: u.at })),
-          expected_count: seals.length,
-          scanned_count: seals.length - missing.length,
-          scanned_barcode: scannedSeals.map(x => x.code).join('|'),
-          expected_barcode: seals.map(m => m.lid_sn).join('|'),
-          match_status: matchStatus,
-          notes: notes,
-          photo_url: photoUrl,
-          driver_email: currentAccount ? currentAccount.email : 'anonymous',
-          driver_uid: currentAccount ? currentAccount.uid : 'anon',
-          gps: currentGps,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        await firebase.firestore().collection('deliveries').add(deliveryRecord);
-
-        alertDiv.className = 'alert alert-success';
-        alertDiv.innerHTML = '&#x2705; Custody delivery successfully recorded!';
-        alertDiv.style.display = 'block';
-
-        setTimeout(() => {
-          alertDiv.style.display = 'none';
-          showView('viewPollingPlaces');
-        }, 2000);
-
+        if (!navigator.onLine) throw Object.assign(new Error('offline'), { code: 'functions/unavailable' });
+        const r = await sendDelivery(entry);
+        show(r.match_status === 'MATCH' ? 'alert-success' : 'alert-warning',
+          `&#x2705; Delivery recorded &mdash; <strong>${escapeHtml(r.match_status)}</strong> (${r.scanned_count} of ${r.expected_count} seals verified).`);
+        done = true;
       } catch (err) {
-        console.error("Submission error:", err);
-        alertDiv.className = 'alert alert-danger';
-        alertDiv.textContent = 'Error recording delivery: ' + err.message;
-        alertDiv.style.display = 'block';
+        if (isNetworkError(err)) {
+          try {
+            await idbPut(entry);
+            updateQueueBadge();
+            show('alert-warning', '&#x1F4BE; Saved on this device. It will be verified and submitted automatically when you are back online.');
+            done = true;
+          } catch (qErr) {
+            console.error('Could not queue delivery:', qErr);
+            show('alert-danger', 'You are offline and this device could not save the record. Please reconnect and try again.');
+          }
+        } else {
+          console.error('Submission error:', err);
+          show('alert-danger', 'Error recording delivery: ' + escapeHtml(err.message));
+        }
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<span aria-hidden="true">&#x1F4BE;</span> Record Custody Delivery';
+      }
+      if (done) {
+        setTimeout(() => { alertDiv.style.display = 'none'; showView('viewPollingPlaces'); }, 2500);
+      }
+    }
+
+    // ---- Admin: election import ----------------------------------------------------------------
+    let importPreviewOk = false;
+
+    const readFileText = (id) => {
+      const f = document.getElementById(id).files[0];
+      return f ? f.text() : Promise.resolve(null);
+    };
+
+    function renderImportResult(r, committed) {
+      const li = (a) => a.length ? `<ul>${a.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>` : '';
+      const warn = [].concat(
+        r.unassigned.length ? ['Machines with no matching precinct: ' + r.unassigned.join(', ')] : [],
+        r.noMachineBuildings.length ? ['Locations with no machines: ' + r.noMachineBuildings.join(', ')] : [],
+        r.warnings);
+      document.getElementById('importResult').innerHTML = `
+        <div class="alert ${warn.length ? 'alert-warning' : 'alert-success'}" style="display:block;">
+          <strong>${committed ? 'Published' : 'Preview'}:</strong> ${escapeHtml(r.election.name)} (${escapeHtml(r.election.date)}) &mdash;
+          ${r.buildings} locations, ${r.seals} seals.
+          ${warn.length ? '<br><strong>Check these:</strong>' + li(warn) : ''}
+        </div>`;
+    }
+
+    async function runImport(commit) {
+      const out = document.getElementById('importResult');
+      const btnP = document.getElementById('btnImportPreview'), btnC = document.getElementById('btnImportPublish');
+      try {
+        const [machineCsv, precinctCsv] = await Promise.all([readFileText('importMachine'), readFileText('importPrecinct')]);
+        if (!machineCsv || !precinctCsv) { out.innerHTML = '<div class="alert alert-danger" style="display:block;">Choose both export files first.</div>'; return; }
+        if (commit && !confirm('Publish this election? It replaces any previous import of the same election and becomes the active election.')) return;
+        btnP.disabled = btnC.disabled = true;
+        out.textContent = commit ? 'Publishing...' : 'Checking...';
+        const res = await callFn('importElection', { machineCsv, precinctCsv, commit }, { timeout: 120000 });
+        renderImportResult(res.data, commit);
+        importPreviewOk = !commit;
+        if (commit) { loadElections(); loadElectionList(); }
+      } catch (err) {
+        importPreviewOk = false;
+        out.innerHTML = `<div class="alert alert-danger" style="display:block;">Import failed: ${escapeHtml(err.message)}</div>`;
+      } finally {
+        btnP.disabled = false;
+        btnC.disabled = !importPreviewOk;
+      }
+    }
+
+    function invalidateImportPreview() {
+      importPreviewOk = false;
+      document.getElementById('btnImportPublish').disabled = true;
+    }
+
+    async function loadElectionList() {
+      const el = document.getElementById('electionList');
+      try {
+        const snap = await firebase.firestore().collection('elections').get();
+        if (snap.empty) { el.textContent = 'No elections imported yet.'; return; }
+        el.innerHTML = snap.docs.map(d => d.data()).sort((a, b) => String(b.date).localeCompare(String(a.date)))
+          .map(e => `<div>${e.active ? '&#x2705; <strong>Active</strong>' : '&#x23F8;&#xFE0F; Inactive'} &mdash; ${escapeHtml(e.name)} (${escapeHtml(e.date)}), ${e.location_count || '?'} locations, ${e.seal_count || '?'} seals</div>`).join('');
+      } catch (err) {
+        el.textContent = 'Could not load elections: ' + err.message;
       }
     }
 
@@ -822,16 +926,18 @@
       let scannedCell, expectedCell;
       if (Array.isArray(data.seals)) {
         scannedCell = data.seals.filter(x => x.scanned).map(x => `<div><code>${escapeHtml(x.expected)}</code> &#x2705;</div>`).join('')
-          + (data.unexpected_seals || []).map(x => `<div><code>${escapeHtml(x.code)}</code> &#x26A0;&#xFE0F;</div>`).join('');
+          + (data.unexpected_seals || []).map(x => `<div><code>${escapeHtml(x.code)}</code> &#x26A0;&#xFE0F;${x.belongs_to ? `<br><small>belongs to ${escapeHtml(x.belongs_to)}</small>` : ''}</div>`).join('');
         expectedCell = data.seals.map(x => `<div><code>${escapeHtml(x.expected)}</code> ${x.scanned ? '&#x2705;' : '&#x274C;'}</div>`).join('');
       } else {
         scannedCell = `<code>${escapeHtml(data.scanned_barcode)}</code>`;
         expectedCell = `<code>${escapeHtml(data.expected_barcode)}</code>`;
       }
 
-      const photoLink = data.photo_url
-        ? `<a href="${escapeHtml(data.photo_url)}" target="_blank" rel="noopener noreferrer" class="map-link">View Photo</a>`
-        : 'None';
+      const photoLink = data.photo_path
+        ? `<a href="#" data-photo-path="${escapeHtml(data.photo_path)}" class="map-link">View Photo</a>`
+        : data.photo_url
+          ? `<a href="${escapeHtml(data.photo_url)}" target="_blank" rel="noopener noreferrer" class="map-link">View Photo</a>`
+          : 'None';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -867,6 +973,18 @@
       document.getElementById('archivedAuditSummary').textContent = `Other / past elections (${archived.length})`;
       document.getElementById('archivedAudit').style.display = archived.length ? '' : 'none';
     }
+
+    // Photos are stored by path; fetch a download URL on demand (admin-only storage rule)
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-photo-path]');
+      if (!a) return;
+      e.preventDefault();
+      const w = window.open('', '_blank');
+      if (w) w.opener = null;
+      firebase.storage().ref().child(a.dataset.photoPath).getDownloadURL()
+        .then(url => { if (w) w.location = url; else window.location = url; })
+        .catch(err => { if (w) w.close(); alert('Could not load photo: ' + err.message); });
+    });
 
     function loadAuditLog() {
       const tbody = document.getElementById('auditTableBody');

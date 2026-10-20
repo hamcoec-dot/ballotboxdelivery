@@ -9,7 +9,7 @@ Hosted entirely as a static single-page application on **GitHub Pages**, backed 
 ## 📋 Features
 
 - **Mobile Camera Barcode Scanner:** Reads Code 128, Code 39, QR Code, Data Matrix seals via live camera (`html5-qrcode`).
-- **Manifest Barcode Verification:** Scans every seal at a location against the per-election machine export (`machine_data.csv`). Shows `MATCH`, `INCOMPLETE`, or `MISMATCH`.
+- **Manifest Barcode Verification:** Scans every seal at a location and verifies it server-side against the imported election. Shows `MATCH`, `INCOMPLETE`, or `MISMATCH`.
 - **Delivery Photograph Capture:** Integrates with native camera to capture and upload proof-of-delivery photos.
 - **GPS Timestamp Logging:** Automatically captures precise geolocation coordinates upon delivery submit.
 - **Offline Mode & Persistence:** Operates seamlessly offline via Service Worker caching and Firestore offline persistence.
@@ -66,17 +66,40 @@ Admins are an allowlist of Firebase Auth UIDs in the Firestore `admins` collecti
 
 ---
 
-## 📄 Per-Election Data Ingest
+## 📄 Importing an Election (Admin)
 
-Each election, save the two election-office exports unchanged in the repo root and redeploy:
+Seal numbers are **never** stored in the repo or sent to drivers' browsers. Each election an admin imports the two election-office exports in the app:
 
-| Export | Save as | Used for |
-|---|---|---|
-| Machine data (e.g. `November26MachineData.csv`) | `machine_data.csv` | Election name/date, one seal per machine = `Ballot box lid SN` |
-| Precincts and polling places (e.g. `2611 Nov 26 Precincts and polling places.csv`) | `precincts.csv` | Building name + address per precinct |
+1. Sign in as an admin, open **Import Election Data**.
+2. Choose the machine data export and the precincts/polling places export (saved CSVs, unchanged).
+3. **Preview** (check location and seal counts and any warnings), then **Publish**. The imported election becomes the active one.
 
-- Machines join to precincts on `CPN` = `CountyPrecinctNum` (fallback: `Precinct` name). Rows with an empty lid SN are skipped.
+How it works:
+- Machines join to precincts on `CPN` = `CountyPrecinctNum` (fallback: precinct name). Rows with an empty `Ballot box lid SN` are skipped.
 - A delivery stop is one physical building; all seals of every precinct in it are scanned in one delivery.
-- `precincts.csv` has unquoted commas in its address fields; the app parses it positionally, so do not hand-edit it.
-- Seal barcode must equal the lid SN (match is trimmed, case-insensitive).
-- Delivery status: `MATCH` (all seals scanned), `INCOMPLETE` (some missing), `MISMATCH` (unexpected seal scanned).
+- The `precincts` export has unquoted commas in its address fields; it is parsed positionally, so do not hand-edit it.
+- Only the columns needed are stored. The expected seal numbers live in `elections/{id}/expected/*`, which no client can read.
+- Drivers' scans are checked by the `verifySeal` Cloud Function (match or no match only; 15 wrong attempts per location locks that driver out until an admin deletes their `rate_limits` doc).
+- `submitDelivery` computes the status: `MATCH` (all seals verified), `INCOMPLETE` (some missing), `MISMATCH` (unexpected seal scanned).
+- Offline: scans show as pending and submissions queue on the device, then verify and sync when back online.
+
+Do not commit export files (`*.csv` is git-ignored).
+
+---
+
+## ☁️ Cloud Functions
+
+Source in `functions/` (Node 20, 2nd gen, `us-east1`). Requires the Blaze plan.
+
+```bash
+cd functions && npm install && npm test        # unit tests (synthetic data only)
+firebase deploy --only functions,firestore:rules
+```
+
+Local emulators (check that ports 8181, 9099, 9199, 5001 are free first):
+
+```bash
+firebase emulators:start --only auth,firestore,functions,storage --project ballotboxdelivery
+```
+
+Then open `http://127.0.0.1:8123/?emulator` (any static server).

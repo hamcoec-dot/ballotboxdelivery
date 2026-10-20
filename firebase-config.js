@@ -10,14 +10,18 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+let fbFunctions = null;
 if (typeof firebase !== 'undefined') {
   firebase.initializeApp(firebaseConfig);
+  fbFunctions = firebase.app().functions('us-east1');
+  firebase.storage().setMaxUploadRetryTime(15000);
 
   // Local development: use Firebase Emulator Suite instead of the live project
   if (['localhost', '127.0.0.1'].includes(location.hostname) && location.search.includes('emulator')) {
     firebase.auth().useEmulator('http://127.0.0.1:9099');
-    firebase.firestore().useEmulator('127.0.0.1', 8080);
+    firebase.firestore().useEmulator('127.0.0.1', 8181);
     firebase.storage().useEmulator('127.0.0.1', 9199);
+    fbFunctions.useEmulator('127.0.0.1', 5001);
     console.info('Using Firebase emulators');
   }
   

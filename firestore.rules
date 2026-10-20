@@ -1,17 +1,51 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
     function isAdmin() {
       return request.auth != null
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
+
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid; // own doc only
       allow write: if false;                                           // Console only
     }
+
+    // Election metadata and per-location labels (no seal numbers) are readable by any signed-in user.
+    // Writes happen only through the importElection Cloud Function (Admin SDK bypasses rules).
+    match /elections/{eid} {
+      allow read: if signedIn();
+      allow write: if false;
+      match /locations/{locKey} {
+        allow read: if signedIn();
+        allow write: if false;
+      }
+      // Expected seal numbers: never readable or writable from a client.
+      match /expected/{locKey} {
+        allow read, write: if false;
+      }
+    }
+
+    // Deliveries are created only by the submitDelivery Cloud Function, which computes match_status.
     match /deliveries/{deliveryId} {
-      allow create: if request.auth != null;
+      allow create: if false;
       allow read, update, delete: if isAdmin();
+    }
+
+    // Audit trail of every seal check (written by verifySeal).
+    match /seal_checks/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Failed-attempt counters (functions only). Admins may delete one to reset a driver.
+    match /rate_limits/{id} {
+      allow read: if isAdmin();
+      allow delete: if isAdmin();
+      allow create, update: if false;
     }
   }
 }
