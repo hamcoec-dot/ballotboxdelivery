@@ -102,7 +102,7 @@
           <div>
             <div id="deliveryStop" style="font-weight: 700; color: var(--primary-color);"></div>
             <h2 id="deliveryLocationName" class="card-title" style="margin-bottom: 4px !important;">Brainerd Recreation Center</h2>
-            <p id="deliveryLocationAddress" style="font-size: 14px; color: var(--text-muted);"></p>
+            <p id="deliveryLocationAddress" class="meta-line"></p>
           </div>
           <button type="button" class="btn btn-small btn-secondary" onclick="showView('viewPollingPlaces')" aria-label="Back to polling place list">
             &larr; Change Location
@@ -111,14 +111,14 @@
 
         <details id="contactsBox" open style="margin-bottom: 16px; display: none;">
           <summary id="contactsSummary" style="cursor: pointer; font-weight: 700;">Contacts</summary>
-          <div id="contactsList" style="font-size: 14px; margin-top: 8px;"></div>
+          <div id="contactsList" class="meta-line" style="margin-top: 8px;"></div>
         </details>
 
         <div id="deliveryAlert" class="alert" style="display: none;" role="alert"></div>
 
         <!-- Section A: Barcode Scan -->
         <div style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
-          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 1: Scan Ballot Box Seal Barcodes</h3>
+          <h3 class="step-title">Step 1: Scan Ballot Box Seal Barcodes</h3>
           <p id="sealProgress" style="font-weight: 700; margin-bottom: 12px;"></p>
           <div id="sealChecklist" style="margin-bottom: 16px;"></div>
 
@@ -128,7 +128,7 @@
             <button type="button" id="btnStartScan" class="btn" onclick="startBarcodeScanner()" aria-label="Open camera to scan seal barcodes">
               <span aria-hidden="true">&#x1F4F7;</span> Open Barcode Scanner
             </button>
-            <button type="button" id="btnStopScan" class="btn btn-secondary" onclick="stopBarcodeScanner()" style="display: none;" aria-label="Stop barcode camera scanner">
+            <button type="button" id="btnStopScan" class="btn btn-secondary" onclick="stopBarcodeScanner()" hidden aria-label="Stop barcode camera scanner">
               Stop Scanner
             </button>
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('photoSeal').click()" aria-label="Take a photo of the seal barcode">
@@ -150,16 +150,16 @@
 
         <!-- Section B: Supplies -->
         <div style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
-          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 2: Supplies</h3>
-          <p id="ballotBoxLine" style="font-size: 14px; margin-bottom: 8px;"></p>
+          <h3 class="step-title">Step 2: Supplies</h3>
+          <p id="ballotBoxLine" class="meta-line" style="margin-bottom: 8px;"></p>
           <p id="suppliesProgress" style="font-weight: 700; margin-bottom: 8px;"></p>
           <div id="suppliesList"></div>
         </div>
 
         <!-- Section C: Delivery Photo -->
         <div style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
-          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 3: Take Delivery Photo</h3>
-          <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">Capture a photo showing the seal and machine delivered at location.</p>
+          <h3 class="step-title">Step 3: Take Delivery Photo</h3>
+          <p class="hint" style="margin-bottom: 12px;">Capture a photo showing the seal and machine delivered at location.</p>
           
           <input type="file" id="photoInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoCaptured(event)">
           <button type="button" class="btn btn-outline" onclick="document.getElementById('photoInput').click()" aria-label="Take delivery photograph with camera">
@@ -168,20 +168,20 @@
 
           <div id="photoPreviewBox" class="photo-preview-box" style="display: none;">
             <img id="photoPreviewImg" class="photo-preview-img" alt="Captured delivery photo preview">
-            <p style="font-size: 13px; color: var(--success-color); margin-top: 4px;">&#x2705; Photo attached</p>
+            <p class="hint" style="color: var(--success-color); margin-top: 4px;">&#x2705; Photo attached</p>
           </div>
         </div>
 
         <!-- Section D: GPS & Notes -->
         <div style="margin-bottom: 24px;">
-          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 4: Notes &amp; Custody Details</h3>
+          <h3 class="step-title">Step 4: Notes &amp; Custody Details</h3>
           
           <div class="form-group">
             <label for="deliveryNotes">Delivery Notes (Optional)</label>
             <textarea id="deliveryNotes" rows="3" placeholder="Add any operational notes, seal damage observations, or receiver names..."></textarea>
           </div>
 
-          <div id="gpsStatus" style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+          <div id="gpsStatus" class="hint" style="margin-bottom: 16px;">
             <span aria-hidden="true">&#x1F4CD;</span> GPS Location: <span id="gpsCoordsText">Fetching coordinates...</span>
           </div>
         </div>
@@ -560,12 +560,12 @@
       const card = document.createElement('div');
       card.className = 'flex-card';
       card.innerHTML = `
-        <div style="font-weight: 700; font-size: 14px; color: var(--primary-color);">${item.route.label ? `<span>Stop ${escapeHtml(item.route.label)}</span> &middot; ` : ''}${escapeHtml(precinctListText(item))}</div>
-        <h3 style="margin: 4px 0;">${escapeHtml(item.location_name)}</h3>
-        ${item.address ? `<p style="font-size: 14px; margin-bottom: 8px;">
+        <div class="stop-eyebrow">${item.route.label ? `<span>Stop ${escapeHtml(item.route.label)}</span> &middot; ` : ''}${escapeHtml(precinctListText(item))}</div>
+        <h3 class="stop-name">${escapeHtml(item.location_name)}</h3>
+        ${item.address ? `<p class="meta-line" style="margin-bottom: 8px;">
           <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(item.address)}</a>
         </p>` : ''}
-        <p style="font-size: 14px; margin-bottom: 8px;${noSeals ? ' color: var(--danger-color);' : ''}">
+        <p class="meta-line" style="margin-bottom: 8px;${noSeals ? ' color: var(--danger-color);' : ''}">
           ${noSeals ? '&#x26A0;&#xFE0F; No seals on file' : `&#x1F512; ${item.slots.length} seal${item.slots.length === 1 ? '' : 's'}`}${item.supplies.length ? ` &middot; &#x1F9F0; ${item.supplies.length} supply item${item.supplies.length === 1 ? '' : 's'}` : ''}
         </p>
       `;
@@ -573,11 +573,11 @@
       if (link) link.addEventListener('click', e => e.stopPropagation());
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn btn-small';
+      btn.className = 'btn';
       btn.innerHTML = 'Start Delivery &rarr;';
       btn.setAttribute('aria-label', `Select ${item.location_name} for delivery`);
-      btn.addEventListener('click', () => selectPollingPlace(item.location_key));
       card.appendChild(btn);
+      card.addEventListener('click', () => selectPollingPlace(item.location_key)); // whole card is the tap target
       return card;
     }
 
@@ -633,7 +633,7 @@
       return String(text).split(PHONE_RE).map((part, i) => {
         if (i % 2 === 0) return escapeHtml(part);
         const digits = part.replace(/\D/g, '');
-        return digits.length === 10 ? `<a href="tel:+1${digits}" class="map-link">${escapeHtml(part)}</a>` : escapeHtml(part);
+        return digits.length === 10 ? `<a href="tel:+1${digits}" class="tel-btn">&#x1F4DE; ${escapeHtml(part)}</a>` : escapeHtml(part);
       }).join('');
     }
 
@@ -644,8 +644,9 @@
       const count = contacts.filter(c => !c.startsWith('\u2014')).length;
       document.getElementById('contactsSummary').textContent = `Contacts (${count})`;
       document.getElementById('contactsList').innerHTML = contacts.map(c => c.startsWith('\u2014')
-        ? `<div style="font-weight:700; margin-top:8px;">${escapeHtml(c.replace(/^\u2014\s*/, ''))}</div>`
-        : `<div>${linkifyPhones(c)}</div>`).join('');
+        ? `<div style="font-weight:700; margin-top:12px;">${escapeHtml(c.replace(/^\u2014\s*/, ''))}</div>`
+        : `<div style="margin-top:12px;">${c.split('|').map(x => x.trim()).filter(Boolean)
+            .map((seg, i) => `<div${i === 0 ? ' style="font-weight:700;"' : ''}>${linkifyPhones(seg)}</div>`).join('')}</div>`).join('');
     }
 
     // ---- Supplies checklist: per item Delivered, or the quantity actually delivered when it is not ----
@@ -667,7 +668,7 @@
       const done = items.filter(supplyConfirmed).length;
       document.getElementById('suppliesProgress').textContent = items.length ? `${done} of ${items.length} items confirmed` : '';
       const list = document.getElementById('suppliesList');
-      if (!items.length) { list.innerHTML = '<p style="font-size:14px; color: var(--text-muted);">No supplies are listed for this stop.</p>'; return; }
+      if (!items.length) { list.innerHTML = '<p class="hint">No supplies are listed for this stop.</p>'; return; }
       list.innerHTML = items.map(x => {
         const st = supplyState[x.key] || { delivered: false, qty: 0 };
         return `<div class="supply-row${st.delivered ? ' done' : ''}">
@@ -736,7 +737,7 @@
           : '&#x23F3; Will verify when online';
         rows.push(`
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0;">
-            <div><code>${escapeHtml(s.code)}</code><div style="font-size:13px;">${msg}</div></div>
+            <div><code>${escapeHtml(s.code)}</code><div class="seal-status">${msg}</div></div>
             <button type="button" class="btn btn-small btn-outline" onclick="removeScannedSeal(${i})" aria-label="Remove seal ${escapeHtml(s.code)}">Remove</button>
           </div>`);
       });
@@ -887,15 +888,15 @@
       if (scanSession) return;
       const reader = document.getElementById('reader');
       reader.style.display = 'block';
-      document.getElementById('btnStartScan').style.display = 'none';
-      document.getElementById('btnStopScan').style.display = 'inline-block';
+      document.getElementById('btnStartScan').hidden = true;
+      document.getElementById('btnStopScan').hidden = false;
       reader.innerHTML =
         '<div class="scan-wrap"><video class="scan-video" playsinline muted autoplay></video>' +
         '<div class="scan-band"></div><div class="scan-hint">Hold seal barcode level inside the box</div>' +
         '<div class="scan-debug" style="display:none"></div></div>' +
-        '<div class="scan-controls"><select class="scan-cam" aria-label="Camera" style="display:none"></select>' +
-        '<button type="button" class="btn btn-small btn-secondary scan-torch" style="display:none">&#x1F526; Light</button>' +
-        '<input type="range" class="scan-zoom" aria-label="Zoom" style="display:none"></div>';
+        '<div class="scan-controls"><select class="scan-cam" aria-label="Camera" hidden></select>' +
+        '<button type="button" class="btn btn-small btn-secondary scan-torch" hidden>&#x1F526; Light</button>' +
+        '<input type="range" class="scan-zoom" aria-label="Zoom" hidden></div>';
       const s = scanSession = {
         running: true, stream: null, track: null, busy: false, frame: 0, lastDecode: 0, pauseUntil: 0,
         hit: { key: '', at: 0 }, lastAccept: performance.now(), lastRead: performance.now(),
@@ -967,7 +968,7 @@
         const sel = document.querySelector('#reader .scan-cam');
         if (!sel || cams.length < 2) return;
         sel.innerHTML = cams.map((d, i) => `<option value="${escapeHtml(d.deviceId)}">${escapeHtml(d.label || 'Camera ' + (i + 1))}</option>`).join('');
-        sel.style.display = '';
+        sel.hidden = false;
         sel.onchange = async () => {
           s.deviceId = sel.value; storeSet(CAM_KEY, s.deviceId);
           try { await openCamera(s); } catch (e) { showSealToast('Could not switch camera.'); }
@@ -989,15 +990,15 @@
       const root = document.getElementById('reader');
       const torch = root.querySelector('.scan-torch'), zoom = root.querySelector('.scan-zoom');
       if (!torch || !zoom) return;
-      torch.style.display = caps.torch ? '' : 'none';
+      torch.hidden = !caps.torch;
       if (caps.zoom) {
         zoom.min = caps.zoom.min; zoom.max = caps.zoom.max; zoom.step = caps.zoom.step || 0.1;
         const z = Math.min(2, caps.zoom.max);
         zoom.value = z;
         s.track.applyConstraints({ advanced: [{ zoom: z }] }).catch(() => {});
         zoom.oninput = () => s.track && s.track.applyConstraints({ advanced: [{ zoom: Number(zoom.value) }] }).catch(() => {});
-        zoom.style.display = '';
-      } else zoom.style.display = 'none';
+        zoom.hidden = false;
+      } else zoom.hidden = true;
     }
 
     function setTorch(s, on) {
@@ -1072,8 +1073,8 @@
       try { if (s.audio) s.audio.close(); } catch (e) { /* ignore */ }
       document.getElementById('reader').style.display = 'none';
       document.getElementById('reader').innerHTML = '';
-      document.getElementById('btnStartScan').style.display = 'inline-block';
-      document.getElementById('btnStopScan').style.display = 'none';
+      document.getElementById('btnStartScan').hidden = false;
+      document.getElementById('btnStopScan').hidden = true;
     }
 
     // Release the camera when the page is hidden (screen lock, tab switch); reopen when it returns.
