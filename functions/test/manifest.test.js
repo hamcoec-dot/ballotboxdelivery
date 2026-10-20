@@ -67,3 +67,11 @@ test('buildManifest: missing/invalid DOE throws', () => {
   const csv = [MACHINE_HEADER, mrow(1, 'Alpha A', '', 'DS-1', 'ZZ1', 'not-a-date')].join('\n');
   assert.throws(() => build(csv), /DOE/);
 });
+
+test('deriveSealFormat finds a common prefix/digit count, else null', () => {
+  assert.deepEqual(m.deriveSealFormat(['ZZ100001', 'zz100002', ' ZZ100003']), { prefix: 'ZZ', digits: 6 });
+  assert.equal(m.deriveSealFormat(['ZZ100001', 'ZY100002']), null);
+  assert.equal(m.deriveSealFormat(['ZZ100001', 'ZZ10002']), null);
+  assert.equal(m.deriveSealFormat(['ZZ100001', 'ABC']), null);
+  assert.equal(m.deriveSealFormat([]), null);
+});

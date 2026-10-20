@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hcec-delivery-v5';
+const CACHE_NAME = 'hcec-delivery-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,7 +9,8 @@ const ASSETS_TO_CACHE = [
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js',
-  'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
+  './vendor/barcode-detector/ponyfill.iife.js',
+  './vendor/barcode-detector/zxing_reader.wasm'
 ];
 
 self.addEventListener('install', (event) => {

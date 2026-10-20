@@ -8,7 +8,7 @@ Hosted entirely as a static single-page application on **GitHub Pages**, backed 
 
 ## 📋 Features
 
-- **Mobile Camera Barcode Scanner:** Reads Code 128, Code 39, QR Code, Data Matrix seals via live camera (`html5-qrcode`).
+- **Mobile Camera Barcode Scanner:** Reads Code 128 seals via live camera using the native `BarcodeDetector` (Android Chrome) or a vendored zxing-cpp WASM polyfill (iPhone, `vendor/barcode-detector/`, works offline). Torch, zoom, tap-to-refocus and a camera picker where the phone supports them. Add `?scandebug` to the URL for an engine/fps/timing overlay; `?wasm` forces the polyfill.
 - **Manifest Barcode Verification:** Scans every seal at a location and verifies it server-side against the imported election. Shows `MATCH`, `INCOMPLETE`, or `MISMATCH`.
 - **Delivery Photograph Capture:** Integrates with native camera to capture and upload proof-of-delivery photos.
 - **GPS Timestamp Logging:** Automatically captures precise geolocation coordinates upon delivery submit.
@@ -46,6 +46,12 @@ The application is linked to Firebase project **`ballotboxdelivery`**:
    - Copy the web app configuration into `firebase-config.js` if updating API keys.
 
 ---
+
+### Scanning tips for drivers
+- Hold the phone 15-25 cm away, barcode level inside the box. Tap the video to refocus.
+- Dark: turn on the Light button (Android). Glare: tilt the seal so the light does not bounce into the lens.
+- Still not locking on: **Scan from Photo** uses the phone's own camera (flash and autofocus), or type the number.
+- Test sheet with fake seals: `tools/test-seals.html`.
 
 ## 🔑 Managing Admins
 

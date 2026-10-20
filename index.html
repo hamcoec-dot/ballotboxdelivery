@@ -16,7 +16,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
 
   <!-- HTML5 QR Code Scanner CDN -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
@@ -132,6 +131,10 @@
             <button type="button" id="btnStopScan" class="btn btn-secondary" onclick="stopBarcodeScanner()" style="display: none;" aria-label="Stop barcode camera scanner">
               Stop Scanner
             </button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('photoSeal').click()" aria-label="Take a photo of the seal barcode">
+              <span aria-hidden="true">&#x1F4F8;</span> Scan from Photo
+            </button>
+            <input type="file" id="photoSeal" accept="image/*" capture="environment" style="display: none;" onchange="scanFromPhoto(event)">
           </div>
 
           <div class="form-group">
@@ -352,7 +355,7 @@
     let manifestData = [];
     let selectedElection = null;
     let selectedPollingPlace = null;
-    let html5QrcodeScanner = null;
+    let scanSession = null;
     let capturedPhotoBlob = null;
     let currentGps = { lat: null, lon: null };
 
@@ -438,6 +441,7 @@
               election_id: e.id, election_name: ed.name, election_date: ed.date,
               location_key: x.location_key, location_name: x.location_name, address: x.address || '',
               precincts: x.precincts || [], slots: x.slots || [],
+              seal_format: ed.seal_format || null,
               route: x.route || { day: null, stop: null, label: '', index: 9999 },
               supplies: x.supplies || [], ballot_boxes: x.ballot_boxes || 0, contacts: x.contacts || []
             });
@@ -460,6 +464,7 @@
       const target = document.getElementById(viewId);
       if (target) target.classList.add('active');
 
+      if (viewId !== 'viewDelivery' && scanSession) stopBarcodeScanner();
       if (viewId === 'viewElections' && manifestData.length) {
         renderElections();
       }
@@ -609,7 +614,7 @@
       renderSupplies();
 
       // Reset form fields
-      if (html5QrcodeScanner) stopBarcodeScanner();
+      if (scanSession) stopBarcodeScanner();
       scannedSeals = [];
       lastScan = { key: '', at: 0 };
       document.getElementById('manualSeal').value = '';
@@ -783,7 +788,7 @@
       scannedSeals.filter(s => s.state === 'pending').forEach(verifyScan);
     }
 
-    function addScannedSeal(code, source) {
+    function addScannedSeal(code, source, meta) {
       code = String(code || '').trim();
       if (!code || !selectedPollingPlace) return false;
       const key = normSeal(code);
@@ -795,6 +800,7 @@
         return false;
       }
       const entry = { code, source, at: new Date().toISOString(), state: 'pending', slot: null };
+      if (meta && meta.engine) { entry.engine = meta.engine; entry.ms = meta.ms; }
       scannedSeals.push(entry);
       renderSealChecklist();
       verifyScan(entry);
@@ -815,41 +821,317 @@
     }
 
     function maybeStopScanner() {
-      if (html5QrcodeScanner && selectedPollingPlace && selectedPollingPlace.slots.length && !sealStatus().missing.length) {
+      if (scanSession && selectedPollingPlace && selectedPollingPlace.slots.length && !sealStatus().missing.length) {
         stopBarcodeScanner();
       }
     }
 
-    // Barcode Scanning Controls (continuous until all expected seals scanned or Stop)
-    function startBarcodeScanner() {
-      document.getElementById('reader').style.display = 'block';
-      document.getElementById('btnStartScan').style.display = 'none';
-      document.getElementById('btnStopScan').style.display = 'inline-block';
+    // ---- Barcode scanner: BarcodeDetector (native) or vendored zxing-cpp WASM polyfill; Code 128 only.
+    const SCAN_DEBUG = /[?&]scandebug/.test(location.search);
+    const FORCE_WASM = /[?&]wasm/.test(location.search);
+    const VENDOR_DIR = 'vendor/barcode-detector/';
+    const CAM_KEY = 'hcec.scanCamera';
+    let detectorPromise = null;
+    let scanEngine = '';
 
-      html5QrcodeScanner = new Html5Qrcode("reader");
-      html5QrcodeScanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 150 } },
-        (decodedText) => {
-          addScannedSeal(decodedText, 'camera');
-        },
-        () => { /* ignore low-level frame read errors */ }
-      ).catch(err => {
-        alert("Camera error: " + err);
-        stopBarcodeScanner();
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const el = document.createElement('script');
+        el.src = src; el.onload = resolve; el.onerror = () => reject(new Error('Could not load ' + src));
+        document.head.appendChild(el);
       });
     }
 
-    function stopBarcodeScanner() {
-      const scanner = html5QrcodeScanner;
-      if (!scanner) return;
-      html5QrcodeScanner = null;
-      const reset = () => {
-        document.getElementById('reader').style.display = 'none';
-        document.getElementById('btnStartScan').style.display = 'inline-block';
-        document.getElementById('btnStopScan').style.display = 'none';
+    function getDetector() {
+      if (!detectorPromise) {
+        detectorPromise = (async () => {
+          let Ctor = null;
+          if (!FORCE_WASM && 'BarcodeDetector' in window) {
+            try {
+              if ((await BarcodeDetector.getSupportedFormats()).includes('code_128')) { Ctor = BarcodeDetector; scanEngine = 'native'; }
+            } catch (e) { /* fall through to WASM */ }
+          }
+          if (!Ctor) {
+            await loadScript(VENDOR_DIR + 'ponyfill.iife.js');
+            BarcodeDetectionAPI.setZXingModuleOverrides({ locateFile: (f, prefix) => f.endsWith('.wasm') ? VENDOR_DIR + f : prefix + f });
+            Ctor = BarcodeDetectionAPI.BarcodeDetector; scanEngine = 'wasm';
+          }
+          return new Ctor({ formats: ['code_128'] });
+        })().catch(e => { detectorPromise = null; throw e; });
+      }
+      return detectorPromise;
+    }
+
+    function sealOk(code) {
+      const f = selectedPollingPlace && selectedPollingPlace.seal_format;
+      if (!f) return true;
+      const m = /^([A-Z]+)(\d+)$/.exec(normSeal(code));
+      return !!m && m[1] === f.prefix && m[2].length === f.digits;
+    }
+
+    function storeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function storeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+
+    function beep(s) {
+      try {
+        if (!s.audio) return;
+        const o = s.audio.createOscillator(), g = s.audio.createGain();
+        o.frequency.value = 1200; g.gain.value = 0.15;
+        o.connect(g); g.connect(s.audio.destination);
+        o.start(); o.stop(s.audio.currentTime + 0.09);
+      } catch (e) { /* audio is optional */ }
+    }
+
+    function setScanHint(s, msg) { if (s.hintEl) s.hintEl.textContent = msg; }
+
+    async function startBarcodeScanner() {
+      if (scanSession) return;
+      const reader = document.getElementById('reader');
+      reader.style.display = 'block';
+      document.getElementById('btnStartScan').style.display = 'none';
+      document.getElementById('btnStopScan').style.display = 'inline-block';
+      reader.innerHTML =
+        '<div class="scan-wrap"><video class="scan-video" playsinline muted autoplay></video>' +
+        '<div class="scan-band"></div><div class="scan-hint">Hold seal barcode level inside the box</div>' +
+        '<div class="scan-debug" style="display:none"></div></div>' +
+        '<div class="scan-controls"><select class="scan-cam" aria-label="Camera" style="display:none"></select>' +
+        '<button type="button" class="btn btn-small btn-secondary scan-torch" style="display:none">&#x1F526; Light</button>' +
+        '<input type="range" class="scan-zoom" aria-label="Zoom" style="display:none"></div>';
+      const s = scanSession = {
+        running: true, stream: null, track: null, busy: false, frame: 0, lastDecode: 0, pauseUntil: 0,
+        hit: { key: '', at: 0 }, lastAccept: performance.now(), lastRead: performance.now(),
+        decodes: 0, fpsAt: performance.now(), fps: 0, raw: '', firstMs: null, deviceId: storeGet(CAM_KEY) || '',
+        video: reader.querySelector('video'), hintEl: reader.querySelector('.scan-hint'), band: reader.querySelector('.scan-band'),
+        canvas: document.createElement('canvas'), audio: null, torchOn: false, camLabel: '', res: ''
       };
-      scanner.stop().then(() => { scanner.clear(); reset(); }).catch(err => { console.warn(err); reset(); });
+      try { s.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* optional */ }
+      s.video.addEventListener('click', () => refocus(s));
+      reader.querySelector('.scan-torch').onclick = () => setTorch(s, !s.torchOn);
+      try {
+        s.detector = await getDetector();
+        if (!s.running) return;
+        await openCamera(s);
+        if (!s.running) { stopTracks(s); return; }
+      } catch (err) {
+        alert('Camera error: ' + (err && err.message || err) + '\nUse "Scan from Photo" or type the seal number.');
+        stopBarcodeScanner();
+        return;
+      }
+      if (SCAN_DEBUG) {
+        const dbg = reader.querySelector('.scan-debug');
+        dbg.style.display = 'block';
+        s.dbgTimer = setInterval(() => {
+          dbg.textContent = `engine ${scanEngine} | ${s.camLabel} | ${s.res} | ${s.fps} fps | last "${s.raw}" | first read ${s.firstMs == null ? '-' : s.firstMs + ' ms'}`;
+        }, 500);
+      }
+      s.hintTimer = setInterval(() => {
+        if (performance.now() - s.lastRead > 8000) setScanHint(s, 'Having trouble? Turn on the light, tilt to avoid glare, or use Scan from Photo.');
+      }, 1000);
+      scanTick(s);
+    }
+
+    function stopTracks(s) {
+      if (s.stream) s.stream.getTracks().forEach(t => t.stop());
+      s.stream = null; s.track = null; s.torchOn = false;
+      if (s.video) s.video.srcObject = null;
+    }
+
+    async function openCamera(s) {
+      stopTracks(s);
+      const base = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+      const video = s.deviceId ? { ...base, deviceId: { exact: s.deviceId } } : { ...base, facingMode: 'environment' };
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { ...video, advanced: [{ focusMode: 'continuous' }] }, audio: false });
+      } catch (e) {
+        if (e.name !== 'OverconstrainedError' && e.name !== 'NotReadableError') throw e;
+        if (s.deviceId) { s.deviceId = ''; storeSet(CAM_KEY, ''); }
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      }
+      s.stream = stream;
+      s.track = stream.getVideoTracks()[0];
+      s.video.srcObject = stream;
+      await s.video.play();
+      s.camLabel = s.track.label || 'camera';
+      const st = s.track.getSettings ? s.track.getSettings() : {};
+      s.res = `${s.video.videoWidth}x${s.video.videoHeight}`;
+      s.lastRead = performance.now();
+      if (!s.camsListed) await listCameras(s, st.deviceId);
+      setupTrackControls(s);
+    }
+
+    // After permission is granted labels are available: skip ultra-wide lenses (cannot focus close) and remember the pick.
+    async function listCameras(s, currentId) {
+      s.camsListed = true;
+      try {
+        const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput' && !/front|user|facetime/i.test(d.label));
+        const sel = document.querySelector('#reader .scan-cam');
+        if (!sel || cams.length < 2) return;
+        sel.innerHTML = cams.map((d, i) => `<option value="${escapeHtml(d.deviceId)}">${escapeHtml(d.label || 'Camera ' + (i + 1))}</option>`).join('');
+        sel.style.display = '';
+        sel.onchange = async () => {
+          s.deviceId = sel.value; storeSet(CAM_KEY, s.deviceId);
+          try { await openCamera(s); } catch (e) { showSealToast('Could not switch camera.'); }
+        };
+        const bad = d => /ultra|0\.5/i.test(d.label);
+        const cur = cams.find(d => d.deviceId === currentId);
+        const saved = cams.find(d => d.deviceId === s.deviceId);
+        const want = saved || (cur && !bad(cur) ? cur : cams.find(d => !bad(d)));
+        if (want) sel.value = want.deviceId;
+        if (want && want.deviceId !== currentId) {
+          s.deviceId = want.deviceId;
+          await openCamera(s);
+        }
+      } catch (e) { console.warn('Camera list failed:', e); }
+    }
+
+    function setupTrackControls(s) {
+      const caps = s.track && s.track.getCapabilities ? s.track.getCapabilities() : {};
+      const root = document.getElementById('reader');
+      const torch = root.querySelector('.scan-torch'), zoom = root.querySelector('.scan-zoom');
+      if (!torch || !zoom) return;
+      torch.style.display = caps.torch ? '' : 'none';
+      if (caps.zoom) {
+        zoom.min = caps.zoom.min; zoom.max = caps.zoom.max; zoom.step = caps.zoom.step || 0.1;
+        const z = Math.min(2, caps.zoom.max);
+        zoom.value = z;
+        s.track.applyConstraints({ advanced: [{ zoom: z }] }).catch(() => {});
+        zoom.oninput = () => s.track && s.track.applyConstraints({ advanced: [{ zoom: Number(zoom.value) }] }).catch(() => {});
+        zoom.style.display = '';
+      } else zoom.style.display = 'none';
+    }
+
+    function setTorch(s, on) {
+      if (!s.track) return;
+      s.track.applyConstraints({ advanced: [{ torch: on }] }).then(() => { s.torchOn = on; }).catch(() => showSealToast('Light not available on this camera.'));
+    }
+
+    function refocus(s) {
+      const caps = s.track && s.track.getCapabilities ? s.track.getCapabilities() : {};
+      const modes = caps.focusMode || [];
+      if (!modes.includes('single-shot')) return;
+      s.track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] })
+        .then(() => setTimeout(() => {
+          if (s.track && modes.includes('continuous')) s.track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        }, 1500)).catch(() => {});
+    }
+
+    function scanTick(s) {
+      if (!s.running) return;
+      const next = () => s.video.requestVideoFrameCallback ? s.video.requestVideoFrameCallback(() => scanTick(s)) : requestAnimationFrame(() => scanTick(s));
+      const now = performance.now();
+      if (s.busy || s.suspended || now < s.pauseUntil || now - s.lastDecode < 66 || s.video.readyState < 2 || !s.video.videoWidth) { next(); return; }
+      s.busy = true; s.lastDecode = now;
+      decodeFrame(s).catch(e => console.warn('decode failed', e)).finally(() => {
+        s.busy = false; s.decodes++;
+        const t = performance.now();
+        if (t - s.fpsAt >= 1000) { s.fps = Math.round(s.decodes * 1000 / (t - s.fpsAt)); s.decodes = 0; s.fpsAt = t; }
+        next();
+      });
+    }
+
+    async function decodeFrame(s) {
+      const v = s.video, vw = v.videoWidth, vh = v.videoHeight;
+      const full = (++s.frame % 4 === 0);
+      const sx = full ? 0 : Math.round(vw * 0.05), sw = full ? vw : Math.round(vw * 0.9);
+      const sy = full ? 0 : Math.round(vh * 0.35), sh = full ? vh : Math.round(vh * 0.3);
+      const scale = Math.min(1, 1600 / sw);
+      s.canvas.width = Math.round(sw * scale); s.canvas.height = Math.round(sh * scale);
+      s.canvas.getContext('2d', { willReadFrequently: true }).drawImage(v, sx, sy, sw, sh, 0, 0, s.canvas.width, s.canvas.height);
+      const found = await s.detector.detect(s.canvas);
+      if (!s.running || !found.length) return;
+      for (const f of found) onRead(s, String(f.rawValue || '').trim());
+    }
+
+    function onRead(s, raw) {
+      if (!raw) return;
+      s.raw = raw; s.lastRead = performance.now();
+      const key = normSeal(raw), now = Date.now();
+      if (!(s.hit.key === key && now - s.hit.at <= 800)) { s.hit = { key, at: now }; return; } // need 2 matching reads
+      s.hit = { key: '', at: 0 };
+      s.pauseUntil = performance.now() + 1200;
+      if (!sealOk(raw)) { showSealToast(`Not a seal barcode (read ${raw})`); return; }
+      const ms = Math.round(performance.now() - s.lastAccept);
+      if (s.firstMs == null) s.firstMs = ms;
+      s.lastAccept = performance.now();
+      if (addScannedSeal(raw, 'camera', { engine: scanEngine, ms })) {
+        if (navigator.vibrate) navigator.vibrate(80);
+        beep(s);
+      }
+      s.band.classList.add('scan-ok');
+      setTimeout(() => s.band && s.band.classList.remove('scan-ok'), 700);
+      setScanHint(s, 'Hold seal barcode level inside the box');
+    }
+
+    function stopBarcodeScanner() {
+      const s = scanSession;
+      if (!s) return;
+      scanSession = null;
+      s.running = false;
+      clearInterval(s.dbgTimer); clearInterval(s.hintTimer);
+      stopTracks(s);
+      try { if (s.audio) s.audio.close(); } catch (e) { /* ignore */ }
+      document.getElementById('reader').style.display = 'none';
+      document.getElementById('reader').innerHTML = '';
+      document.getElementById('btnStartScan').style.display = 'inline-block';
+      document.getElementById('btnStopScan').style.display = 'none';
+    }
+
+    // Release the camera when the page is hidden (screen lock, tab switch); reopen when it returns.
+    document.addEventListener('visibilitychange', async () => {
+      const s = scanSession;
+      if (!s) return;
+      if (document.hidden) { s.suspended = true; stopTracks(s); }
+      else if (s.suspended) {
+        try { await openCamera(s); s.suspended = false; } catch (e) { stopBarcodeScanner(); }
+      }
+    });
+
+    // Scan from photo: the native camera app gives full resolution, autofocus and flash.
+    async function scanFromPhoto(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file || !selectedPollingPlace) return;
+      const t0 = performance.now();
+      try {
+        const detector = await getDetector();
+        const bmp = await createImageBitmap(file);
+        const codes = await detectInPhoto(detector, bmp);
+        if (bmp.close) bmp.close();
+        if (!codes.length) { showSealToast('No seal barcode found — retake closer, tilt to avoid glare, or type the number.'); return; }
+        const good = codes.filter(sealOk);
+        if (!good.length) { showSealToast(`Not a seal barcode (read ${codes[0]})`); return; }
+        const ms = Math.round(performance.now() - t0);
+        good.forEach(c => addScannedSeal(c, 'camera', { engine: 'photo', ms }));
+        lastScan = { key: '', at: 0 };
+      } catch (err) {
+        console.warn('Photo scan failed:', err);
+        showSealToast('Could not read the photo. Try again or type the number.');
+      }
+    }
+
+    async function detectInPhoto(detector, bmp) {
+      const k = Math.min(1, 3200 / Math.max(bmp.width, bmp.height));
+      const W = Math.round(bmp.width * k), H = Math.round(bmp.height * k);
+      const cv = document.createElement('canvas');
+      const draw = (sy, sh, dw, dh, rot) => {
+        cv.width = rot ? dh : dw; cv.height = rot ? dw : dh;
+        const c = cv.getContext('2d', { willReadFrequently: true });
+        c.save();
+        if (rot) { c.translate(cv.width, 0); c.rotate(Math.PI / 2); }
+        c.drawImage(bmp, 0, sy, bmp.width, sh, 0, 0, dw, dh);
+        c.restore();
+      };
+      const run = async () => [...new Set((await detector.detect(cv)).map(r => String(r.rawValue || '').trim()).filter(Boolean))];
+      draw(0, bmp.height, W, H, false);
+      let out = await run(); if (out.length) return out;
+      const up = Math.min(2, 3200 / W);
+      for (let i = 0; i < 3; i++) {
+        draw(Math.round(bmp.height * i / 3), Math.round(bmp.height / 3), Math.round(W * up), Math.round(H / 3 * up), false);
+        out = await run(); if (out.length) return out;
+      }
+      draw(0, bmp.height, W, H, true);
+      return run();
     }
 
     // Photo Capture Handling
@@ -1029,7 +1311,7 @@
         photo: capturedPhotoBlob || null,
         payload: {
           clientId, electionId: selectedElection.id, locationKey: selectedPollingPlace.location_key,
-          scans: scannedSeals.map(s => ({ code: s.code, source: s.source, at: s.at })),
+          scans: scannedSeals.map(s => ({ code: s.code, source: s.source, at: s.at, engine: s.engine, ms: s.ms })),
           supplies: selectedPollingPlace.supplies.map(x => {
             const st = supplyState[x.key] || { delivered: false, qty: 0 };
             return st.delivered ? { key: x.key, delivered: true } : { key: x.key, delivered: false, qty: st.qty };

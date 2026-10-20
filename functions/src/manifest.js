@@ -278,4 +278,16 @@ function buildManifest(machineRows, precinctRows, scheduleRows, warn = () => {})
   return result;
 }
 
-module.exports = { normSeal, parseCSV, csvToObjects, parsePrecinctsCSV, parseScheduleCSV, titleCase, slugify, buildManifest };
+// Common seal pattern (e.g. EE + 6 digits) so the client can reject non-seal barcodes. null if no single format.
+function deriveSealFormat(codes) {
+  let fmt = null;
+  for (const c of codes) {
+    const m = /^([A-Z]+)(\d+)$/.exec(normSeal(c));
+    if (!m) return null;
+    if (!fmt) fmt = { prefix: m[1], digits: m[2].length };
+    else if (fmt.prefix !== m[1] || fmt.digits !== m[2].length) return null;
+  }
+  return fmt;
+}
+
+module.exports = { deriveSealFormat, normSeal, parseCSV, csvToObjects, parsePrecinctsCSV, parseScheduleCSV, titleCase, slugify, buildManifest };

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Seal Barcodes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 16px; }
+  h1 { font-size: 18px; } h2 { font-size: 15px; margin-top: 24px; }
+  .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-end; }
+  figure { margin: 0; text-align: center; font-size: 12px; break-inside: avoid; }
+  @media print { .noprint { display: none; } }
+</style>
+</head>
+<body>
+<h1>Test Seal Barcodes (fake data: ZZ + 6 digits, Code 128)</h1>
+<p class="noprint">Print at 100% scale. Fake codes only; they will not verify against a real election, but they exercise camera, format filter and scan-from-photo. To test a full verify, import a test election whose seals use these numbers.</p>
+
+<h2>Large (module width 3)</h2><div class="row" id="large"></div>
+<h2>Medium (module width 2)</h2><div class="row" id="medium"></div>
+<h2>Small (module width 1)</h2><div class="row" id="small"></div>
+<h2>Decoys (should be rejected: "Not a seal barcode")</h2><div class="row" id="decoys"></div>
+
+<script>
+  function add(id, text, width, height, label) {
+    const fig = document.createElement('figure');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    fig.appendChild(svg);
+    const cap = document.createElement('figcaption');
+    cap.textContent = label || text;
+    fig.appendChild(cap);
+    document.getElementById(id).appendChild(fig);
+    JsBarcode(svg, text, { format: 'CODE128', width, height, displayValue: false, margin: 10 });
+  }
+  [100001, 100002, 100003].forEach(n => add('large', 'ZZ' + n, 3, 90));
+  [100004, 100005, 100006].forEach(n => add('medium', 'ZZ' + n, 2, 70));
+  [100007, 100008, 100009].forEach(n => add('small', 'ZZ' + n, 1, 50));
+  add('decoys', 'BAG-77812', 2, 60, 'BAG-77812 (bag)');
+  add('decoys', '0123456789', 2, 60, '0123456789 (RFID-like)');
+  add('decoys', 'SN4455667788', 2, 60, 'SN4455667788 (serial)');
+</script>
+</body>
+</html>

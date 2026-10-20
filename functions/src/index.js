@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { csvToObjects, parsePrecinctsCSV, parseScheduleCSV, buildManifest, normSeal } = require('./manifest');
+const { csvToObjects, parsePrecinctsCSV, parseScheduleCSV, buildManifest, normSeal, deriveSealFormat } = require('./manifest');
 const { splitLocation, matchSlot, computeDelivery, computeSupplies, reconstructScans, mergeScans, applyAdminEdit, UUID_RE } = require('./delivery');
 
 admin.initializeApp();
@@ -121,7 +121,8 @@ exports.importElection = onCall({ memory: '512MiB', timeoutSeconds: 120 }, async
     name: election.name, date: election.date, active: true,
     imported_at: FieldValue.serverTimestamp(),
     imported_by: auth.token.email || auth.uid,
-    location_count: manifest.length, seal_count: sealCount
+    location_count: manifest.length, seal_count: sealCount,
+    seal_format: deriveSealFormat(manifest.flatMap(x => x.machines.map(m => m.lid_sn)))
   });
   await b.commit();
   return { committed: true, ...preview };
@@ -170,7 +171,9 @@ exports.submitDelivery = onCall(async (req) => {
   const scans = d.scans.map(s => ({
     code: str(String(s && s.code), 100, 'code'),
     source: s && s.source,
-    at: typeof (s && s.at) === 'string' ? s.at.slice(0, 40) : null
+    at: typeof (s && s.at) === 'string' ? s.at.slice(0, 40) : null,
+    engine: s && (s.engine === 'native' || s.engine === 'wasm' || s.engine === 'photo') ? s.engine : null,
+    ms: s && Number.isFinite(s.ms) ? Math.min(Math.max(Math.round(s.ms), 0), 600000) : null
   }));
   if (!scans.length) throw new HttpsError('invalid-argument', 'At least one scan is required.');
   if (d.supplies !== undefined && (!Array.isArray(d.supplies) || d.supplies.length > 50)) {

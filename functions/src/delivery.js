@@ -52,6 +52,8 @@ function computeDelivery(pubSlots, expectedSlots, scans, belongsTo = () => null)
     seen.add(key);
     const entry = { code: String(s.code).trim(), source: SOURCES.includes(s.source) ? s.source : 'manual', at: s.at || null };
     if (s.added_by) entry.added_by = s.added_by;
+    if (s.engine) entry.engine = s.engine;
+    if (Number.isFinite(s.ms)) entry.ms = s.ms;
     uniq.push(entry);
   }
   const scannedSlots = new Set();
