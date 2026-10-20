@@ -85,6 +85,15 @@ How it works:
 
 Do not commit export files (`*.csv` is git-ignored).
 
+### Editing or deleting an audit record (Admin)
+
+In the audit log, each record for the **active election** has **Edit** and **Delete**:
+- **Edit** lets an admin change the location, the scanned seal codes, notes and the status (or override it). Seal results are recomputed on the server. A status override stays until you pick **Auto**. Codes an admin adds are tagged as admin-added. A reason is required.
+- **Delete** is a soft delete (reason required): the record leaves the list and the CSV export and appears under **Deleted records**, where it can be restored.
+- Every edit, delete and restore is kept in `deliveries/{id}/revisions` (who, when, why, before and after). Driver name, submission time, election, photo and GPS cannot be changed.
+- Records from past elections and older single-seal records are read-only except notes and delete/restore (legacy records) or not at all (past elections).
+- Two admins editing the same record: the second save is rejected ("changed by someone else"), reload and retry.
+
 ---
 
 ## ☁️ Cloud Functions

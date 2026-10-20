@@ -222,6 +222,7 @@
                 <th scope="col">Status</th>
                 <th scope="col">Driver</th>
                 <th scope="col">Photo</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody id="auditTableBody">
@@ -250,6 +251,66 @@
             </table>
           </div>
         </details>
+
+        <details id="deletedAudit" style="margin-top: 24px; display: none;">
+          <summary id="deletedAuditSummary" style="cursor: pointer; font-weight: 700;">Deleted records (0)</summary>
+          <p style="font-size: 14px; color: var(--text-muted); margin: 8px 0;">Soft-deleted records are hidden from the log and the CSV export. Restore brings one back.</p>
+          <div class="table-responsive">
+            <table id="auditDeletedTable">
+              <thead>
+                <tr>
+                  <th scope="col">Timestamp</th>
+                  <th scope="col">Precinct / Location</th>
+                  <th scope="col">Scanned Seal</th>
+                  <th scope="col">Expected Seal</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Driver</th>
+                  <th scope="col">Photo</th>
+                  <th scope="col">Deleted</th>
+                </tr>
+              </thead>
+              <tbody id="auditDeletedBody"></tbody>
+            </table>
+          </div>
+        </details>
+
+        <dialog id="editDialog" style="max-width: 560px; width: 92vw; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px;">
+          <h3 style="margin-bottom: 4px;">Edit delivery record</h3>
+          <p id="editSummary" style="font-size: 14px; margin-bottom: 12px;"></p>
+          <div id="editLegacyNote" class="alert alert-warning" style="display: none;">Older single-seal record: only the notes can be edited.</div>
+          <div class="form-group">
+            <label for="editLocation">Location</label>
+            <select id="editLocation"></select>
+          </div>
+          <div class="form-group">
+            <label for="editScans">Scanned seals (one per line)</label>
+            <textarea id="editScans" rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="editStatus">Status</label>
+            <select id="editStatus">
+              <option value="auto">Auto (computed from the seals)</option>
+              <option value="MATCH">Override: MATCH</option>
+              <option value="INCOMPLETE">Override: INCOMPLETE</option>
+              <option value="MISMATCH">Override: MISMATCH</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editNotes">Notes</label>
+            <textarea id="editNotes" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="editReason">Reason for this change (required)</label>
+            <input type="text" id="editReason" maxlength="300">
+          </div>
+          <div id="editError" class="alert alert-danger" style="display: none;" role="alert"></div>
+          <div style="display: flex; gap: 8px; margin: 12px 0;">
+            <button type="button" id="btnEditSave" class="btn btn-small" onclick="saveEdit()">Save changes</button>
+            <button type="button" class="btn btn-small btn-outline" onclick="document.getElementById('editDialog').close()">Cancel</button>
+          </div>
+          <h4 style="margin: 8px 0 4px;">History</h4>
+          <div id="editHistory" style="font-size: 13px; max-height: 180px; overflow: auto;"></div>
+        </dialog>
       </div>
     </section>
 
@@ -912,13 +973,20 @@
     // Load Admin Audit Log
     let auditDocs = [];
 
-    function buildAuditRow(data) {
+    const statusBadge = (s) => s === 'MATCH'
+      ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; MATCH</span>'
+      : s === 'INCOMPLETE'
+        ? '<span style="color: var(--warning-color); font-weight:700;">&#x26A0;&#xFE0F; INCOMPLETE</span>'
+        : '<span style="color: var(--danger-color); font-weight:700;">&#x26A0;&#xFE0F; MISMATCH</span>';
+
+    // mode: 'active' (Edit/Delete), 'deleted' (Restore), 'archived' (no actions)
+    function buildAuditRow(data, mode = 'archived', canRestore = false) {
       const dateStr = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : 'Pending Sync';
-      const statusBadge = data.match_status === 'MATCH'
-        ? '<span style="color: var(--success-color); font-weight:700;">&#x2705; MATCH</span>'
-        : data.match_status === 'INCOMPLETE'
-          ? '<span style="color: var(--warning-color); font-weight:700;">&#x26A0;&#xFE0F; INCOMPLETE</span>'
-          : '<span style="color: var(--danger-color); font-weight:700;">&#x26A0;&#xFE0F; MISMATCH</span>';
+      let statusCell = statusBadge(data.match_status);
+      if (data.status_overridden) {
+        statusCell += `<br><small>override &middot; computed ${escapeHtml(data.computed_status || '?')}</small>`;
+      }
+      if (data.edit_count > 0) statusCell += `<br><small>Edited (${data.edit_count})</small>`;
 
       const precinctText = Array.isArray(data.precincts) && data.precincts.length
         ? data.precincts.map(p => `${p.name} (${p.num})`).join(', ')
@@ -939,40 +1007,182 @@
           ? `<a href="${escapeHtml(data.photo_url)}" target="_blank" rel="noopener noreferrer" class="map-link">View Photo</a>`
           : 'None';
 
+      let actionsCell = '';
+      if (mode === 'active') {
+        actionsCell = `<td style="white-space:nowrap;">
+          <button type="button" class="btn btn-small btn-outline" data-audit-action="edit" data-id="${escapeHtml(data.id)}">Edit</button>
+          <button type="button" class="btn btn-small btn-outline" data-audit-action="delete" data-id="${escapeHtml(data.id)}">Delete</button></td>`;
+      } else if (mode === 'deleted') {
+        const when = data.deleted_at ? new Date(data.deleted_at.seconds * 1000).toLocaleString() : '';
+        actionsCell = `<td>${canRestore ? `<button type="button" class="btn btn-small btn-outline" data-audit-action="restore" data-id="${escapeHtml(data.id)}">Restore</button><br>` : ''}
+          <small>Deleted by ${escapeHtml(data.deleted_by)} ${escapeHtml(when)}<br>Reason: ${escapeHtml(data.delete_reason)}</small></td>`;
+      }
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${escapeHtml(dateStr)}</td>
         <td><strong>${escapeHtml(data.location_name)}</strong><br>${escapeHtml(precinctText)}${data.election_name ? `<br><small>${escapeHtml(data.election_name)}</small>` : ''}</td>
         <td>${scannedCell}</td>
         <td>${expectedCell}</td>
-        <td>${statusBadge}</td>
+        <td>${statusCell}</td>
         <td>${escapeHtml(data.driver_email)}</td>
         <td>${photoLink}</td>
+        ${actionsCell}
       `;
       return tr;
     }
 
     // Active election = one present in the loaded manifest. If the manifest is not loaded, show everything.
+    // Soft-deleted records leave the main list and the CSV regardless of election.
     function splitAuditDocs() {
       const activeIds = new Set(manifestData.map(m => m.election_id));
-      const active = [], archived = [];
-      auditDocs.forEach(d => (!activeIds.size || activeIds.has(d.election_id) ? active : archived).push(d));
-      return { active, archived };
+      const active = [], archived = [], deleted = [];
+      auditDocs.forEach(d => {
+        if (d.deleted) deleted.push(d);
+        else (!activeIds.size || activeIds.has(d.election_id) ? active : archived).push(d);
+      });
+      return { active, archived, deleted };
     }
 
     function renderAudit() {
       const tbody = document.getElementById('auditTableBody');
       const archBody = document.getElementById('auditArchivedBody');
+      const delBody = document.getElementById('auditDeletedBody');
       tbody.innerHTML = '';
       archBody.innerHTML = '';
-      const { active, archived } = splitAuditDocs();
+      delBody.innerHTML = '';
+      const { active, archived, deleted } = splitAuditDocs();
+      const activeIds = new Set(manifestData.map(m => m.election_id));
 
-      active.forEach(d => tbody.appendChild(buildAuditRow(d)));
-      archived.forEach(d => archBody.appendChild(buildAuditRow(d)));
-      if (!active.length) tbody.innerHTML = '<tr><td colspan="7">No delivery records for the active election.</td></tr>';
+      active.forEach(d => tbody.appendChild(buildAuditRow(d, 'active')));
+      archived.forEach(d => archBody.appendChild(buildAuditRow(d, 'archived')));
+      deleted.forEach(d => delBody.appendChild(buildAuditRow(d, 'deleted', activeIds.has(d.election_id))));
+      if (!active.length) tbody.innerHTML = '<tr><td colspan="8">No delivery records for the active election.</td></tr>';
       document.getElementById('archivedAuditSummary').textContent = `Other / past elections (${archived.length})`;
       document.getElementById('archivedAudit').style.display = archived.length ? '' : 'none';
+      document.getElementById('deletedAuditSummary').textContent = `Deleted records (${deleted.length})`;
+      document.getElementById('deletedAudit').style.display = deleted.length ? '' : 'none';
     }
+
+    // ---- Admin: edit / soft-delete -------------------------------------------------------------
+    let editingId = null;
+
+    const scanCodesOf = (d) => Array.isArray(d.scans) ? d.scans.map(s => s.code)
+      : String(d.scanned_barcode || '').split('|').map(c => c.trim()).filter(Boolean);
+    const sameCodeSet = (a, b) => {
+      const ka = new Set(a.map(normSeal)), kb = new Set(b.map(normSeal));
+      return ka.size === kb.size && [...ka].every(k => kb.has(k));
+    };
+
+    function setEditError(msg) {
+      const el = document.getElementById('editError');
+      el.textContent = msg || '';
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    async function loadRevisionHistory(id) {
+      const box = document.getElementById('editHistory');
+      box.textContent = 'Loading history...';
+      try {
+        const snap = await firebase.firestore().collection('deliveries').doc(id).collection('revisions').orderBy('at', 'desc').get();
+        if (snap.empty) { box.textContent = 'No changes yet.'; return; }
+        box.innerHTML = snap.docs.map(r => {
+          const x = r.data();
+          const when = x.at ? new Date(x.at.seconds * 1000).toLocaleString() : '';
+          const keys = Object.keys(x.after || {}).filter(k => !['seals', 'scans', 'unexpected_seals'].includes(k));
+          const detail = keys.map(k => `${escapeHtml(k)}: ${escapeHtml(JSON.stringify(x.before[k]))} &rarr; ${escapeHtml(JSON.stringify(x.after[k]))}`).join('<br>');
+          return `<div style="padding:6px 0; border-bottom:1px solid var(--border-color);"><strong>${escapeHtml(x.type)}</strong> by ${escapeHtml(x.by)} &middot; ${escapeHtml(when)}<br>Reason: ${escapeHtml(x.reason)}${detail ? `<br><small>${detail}</small>` : ''}</div>`;
+        }).join('');
+      } catch (err) {
+        box.textContent = 'Could not load history: ' + err.message;
+      }
+    }
+
+    function openEditDialog(id) {
+      const d = auditDocs.find(x => x.id === id);
+      if (!d) return;
+      editingId = id;
+      const legacy = !Array.isArray(d.seals);
+      setEditError('');
+
+      const sel = document.getElementById('editLocation');
+      sel.innerHTML = manifestData.map(l => `<option value="${escapeHtml(l.location_key)}">${escapeHtml(l.location_name)}</option>`).join('');
+      sel.value = d.location_key || '';
+      document.getElementById('editScans').value = scanCodesOf(d).join('\n');
+      document.getElementById('editNotes').value = d.notes || '';
+      document.getElementById('editStatus').value = d.status_overridden ? d.match_status : 'auto';
+      document.getElementById('editReason').value = '';
+      ['editLocation', 'editScans', 'editStatus'].forEach(i => { document.getElementById(i).disabled = legacy; });
+      document.getElementById('editLegacyNote').style.display = legacy ? 'block' : 'none';
+      document.getElementById('editSummary').innerHTML =
+        `<strong>${escapeHtml(d.location_name)}</strong> &middot; status ${statusBadge(d.match_status)}` +
+        (d.status_overridden ? ` (override; computed ${escapeHtml(d.computed_status || '?')})` : '');
+      loadRevisionHistory(id);
+      document.getElementById('editDialog').showModal();
+    }
+
+    async function saveEdit() {
+      const d = auditDocs.find(x => x.id === editingId);
+      if (!d) return;
+      const legacy = !Array.isArray(d.seals);
+      const reason = document.getElementById('editReason').value.trim();
+      const patch = {};
+
+      const notes = document.getElementById('editNotes').value.trim();
+      if (notes !== (d.notes || '')) patch.notes = notes;
+      if (!legacy) {
+        const loc = document.getElementById('editLocation').value;
+        if (loc && loc !== d.location_key) patch.locationKey = loc;
+        const codes = document.getElementById('editScans').value.split('\n').map(c => c.trim()).filter(Boolean);
+        if (!sameCodeSet(codes, scanCodesOf(d))) patch.scans = codes;
+        const st = document.getElementById('editStatus').value;
+        const initial = d.status_overridden ? d.match_status : 'auto';
+        if (st !== initial) patch.statusOverride = st === 'auto' ? null : st;
+      }
+      if (!Object.keys(patch).length) return setEditError('No changes to save.');
+      if (reason.length < 3) return setEditError('Please enter a reason (at least 3 characters).');
+
+      const btn = document.getElementById('btnEditSave');
+      btn.disabled = true;
+      setEditError('');
+      try {
+        const res = await callFn('adminUpdateDelivery', { deliveryId: d.id, baseEditCount: d.edit_count || 0, reason, patch });
+        document.getElementById('editDialog').close();
+        if (res.data.status_overridden && res.data.match_status !== res.data.computed_status) {
+          alert(`Saved. The status is overridden to ${res.data.match_status} (computed: ${res.data.computed_status}).`);
+        }
+      } catch (err) {
+        setEditError(err.code === 'functions/aborted'
+          ? 'This record was changed by someone else. Close this window, wait a moment, and reopen it.'
+          : err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function setDeleted(id, deleted) {
+      const d = auditDocs.find(x => x.id === id);
+      if (!d) return;
+      const reason = prompt(deleted
+        ? `Delete the record for ${d.location_name}? It is hidden and can be restored.\nReason (required):`
+        : `Restore the record for ${d.location_name}?\nReason (required):`);
+      if (reason === null) return;
+      if (reason.trim().length < 3) { alert('A reason of at least 3 characters is required.'); return; }
+      try {
+        await callFn('adminSetDeliveryDeleted', { deliveryId: id, baseEditCount: d.edit_count || 0, deleted, reason: reason.trim() });
+      } catch (err) {
+        alert(err.code === 'functions/aborted' ? 'This record was changed by someone else. Try again in a moment.' : err.message);
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-audit-action]');
+      if (!b) return;
+      const id = b.dataset.id;
+      if (b.dataset.auditAction === 'edit') openEditDialog(id);
+      else if (b.dataset.auditAction === 'delete') setDeleted(id, true);
+      else if (b.dataset.auditAction === 'restore') setDeleted(id, false);
+    });
 
     // Photos are stored by path; fetch a download URL on demand (admin-only storage rule)
     document.addEventListener('click', (e) => {
@@ -988,15 +1198,15 @@
 
     function loadAuditLog() {
       const tbody = document.getElementById('auditTableBody');
-      tbody.innerHTML = '<tr><td colspan="7">Loading custody records...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8">Loading custody records...</td></tr>';
 
       firebase.firestore().collection('deliveries')
         .orderBy('timestamp', 'desc')
         .onSnapshot(snapshot => {
-          auditDocs = snapshot.docs.map(doc => doc.data());
+          auditDocs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
           renderAudit();
         }, err => {
-          tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger-color);">Error loading records: ${escapeHtml(err.message)}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger-color);">Error loading records: ${escapeHtml(err.message)}</td></tr>`;
         });
     }
 
@@ -1008,7 +1218,7 @@
         return;
       }
 
-      let csvContent = 'Timestamp,Election,Precinct,Location,Scanned Seal,Expected Seal,Expected Count,Scanned Count,Missing Seals,Unexpected Seals,Status,Driver,Notes,Photo URL\n';
+      let csvContent = 'Timestamp,Election,Precinct,Location,Scanned Seal,Expected Seal,Expected Count,Scanned Count,Missing Seals,Unexpected Seals,Status,Computed Status,Status Overridden,Edit Count,Driver,Notes,Photo URL\n';
 
       rows.forEach(d => {
         const dateStr = d.timestamp ? new Date(d.timestamp.seconds * 1000).toISOString() : '';
@@ -1024,6 +1234,9 @@
           Array.isArray(d.seals) ? d.seals.filter(x => !x.scanned).map(x => x.expected).join('|') : '',
           Array.isArray(d.unexpected_seals) ? d.unexpected_seals.map(x => x.code).join('|') : '',
           d.match_status || '',
+          d.computed_status || d.match_status || '',
+          d.status_overridden ? 'yes' : '',
+          d.edit_count || 0,
           d.driver_email || '',
           d.notes || '',
           d.photo_url || ''

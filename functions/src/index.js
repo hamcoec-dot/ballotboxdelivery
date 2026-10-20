@@ -4,7 +4,7 @@ const { FieldValue } = require('firebase-admin/firestore');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { csvToObjects, parsePrecinctsCSV, buildManifest, normSeal } = require('./manifest');
-const { splitLocation, matchSlot, computeDelivery, UUID_RE } = require('./delivery');
+const { splitLocation, matchSlot, computeDelivery, reconstructScans, mergeScans, applyAdminEdit, UUID_RE } = require('./delivery');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'us-east1', maxInstances: 10 });
@@ -28,6 +28,20 @@ const str = (v, max, name) => {
   if (typeof v !== 'string' || v.length > max) throw new HttpsError('invalid-argument', `Invalid ${name}.`);
   return v;
 };
+
+// For codes that are not in `locationKey`, find which other location they belong to (admin-visible only).
+// Returns { NORMALIZED_CODE: locationKey | null }.
+async function resolveBelongsTo(eref, locationKey, unexpected) {
+  const belongs = {};
+  if (!unexpected.length) return belongs;
+  const others = [];
+  (await eref.collection('expected').get()).forEach(x => { if (x.id !== locationKey) others.push([x.id, x.data().slots]); });
+  unexpected.forEach(u => {
+    const hit = others.find(([, slots]) => matchSlot(slots, u.code) >= 0);
+    belongs[normSeal(u.code)] = hit ? hit[0] : null;
+  });
+  return belongs;
+}
 
 // ---------------------------------------------------------------- importElection
 async function deleteCollection(ref) {
@@ -172,17 +186,8 @@ exports.submitDelivery = onCall(async (req) => {
   if (!elec.exists || !pubSnap.exists || !expSnap.exists) throw new HttpsError('not-found', 'Unknown election or location.');
   const pub = pubSnap.data();
 
-  // Find which other location a stray code belongs to (admin-visible only)
   const probe = computeDelivery(pub.slots, expSnap.data().slots, scans);
-  const belongs = {};
-  if (probe.unexpected_seals.length) {
-    const others = [];
-    (await eref.collection('expected').get()).forEach(x => { if (x.id !== locationKey) others.push([x.id, x.data().slots]); });
-    probe.unexpected_seals.forEach(u => {
-      const hit = others.find(([, slots]) => matchSlot(slots, u.code) >= 0);
-      belongs[normSeal(u.code)] = hit ? hit[0] : null;
-    });
-  }
+  const belongs = await resolveBelongsTo(eref, locationKey, probe.unexpected_seals);
   const result = computeDelivery(pub.slots, expSnap.data().slots, scans, c => belongs[normSeal(c)] || null);
 
   const record = {
@@ -190,6 +195,7 @@ exports.submitDelivery = onCall(async (req) => {
     election_id: electionId, election_name: elec.data().name,
     location_key: locationKey, location_name: pub.location_name, address: pub.address, precincts: pub.precincts,
     ...result,
+    computed_status: result.match_status, status_overridden: false, edit_count: 0,
     notes, photo_path: photoPath, photo_url: '',
     driver_uid: auth.uid, driver_email: auth.token.email || 'unknown',
     gps,
@@ -202,4 +208,135 @@ exports.submitDelivery = onCall(async (req) => {
     throw e;
   }
   return { match_status: result.match_status, scanned_count: result.scanned_count, expected_count: result.expected_count };
+});
+
+// ---------------------------------------------------------------- admin edit / soft delete
+const DELIVERY_ID_RE = /^[A-Za-z0-9_-]{1,100}$/;
+
+function adminArgs(d) {
+  const deliveryId = str(d.deliveryId, 100, 'deliveryId');
+  if (!DELIVERY_ID_RE.test(deliveryId)) throw new HttpsError('invalid-argument', 'Invalid deliveryId.');
+  if (!Number.isInteger(d.baseEditCount) || d.baseEditCount < 0) throw new HttpsError('invalid-argument', 'Invalid baseEditCount.');
+  const reason = str(d.reason, 300, 'reason').trim();
+  if (reason.length < 3) throw new HttpsError('invalid-argument', 'A reason (3+ characters) is required.');
+  return { deliveryId, baseEditCount: d.baseEditCount, reason };
+}
+
+// Load a delivery and enforce the guards shared by edit/delete/restore.
+async function loadEditable(deliveryId, baseEditCount) {
+  const dref = db.doc(`deliveries/${deliveryId}`);
+  const snap = await dref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Record not found.');
+  const existing = snap.data();
+  const elec = await db.doc(`elections/${existing.election_id}`).get();
+  if (!elec.exists || !elec.data().active) {
+    throw new HttpsError('failed-precondition', 'Only records for the active election can be changed.');
+  }
+  if ((existing.edit_count || 0) !== baseEditCount) {
+    throw new HttpsError('aborted', 'This record was changed by someone else. Reload and try again.');
+  }
+  return { dref, existing };
+}
+
+exports.adminUpdateDelivery = onCall(async (req) => {
+  const auth = await requireAdmin(req);
+  const d = req.data || {};
+  const { deliveryId, baseEditCount, reason } = adminArgs(d);
+  const p = d.patch;
+  if (!p || typeof p !== 'object' || Array.isArray(p)) throw new HttpsError('invalid-argument', 'Invalid patch.');
+
+  const patch = {};
+  if (p.notes !== undefined) patch.notes = str(p.notes, 2000, 'notes');
+  if (p.locationKey !== undefined) patch.locationKey = str(p.locationKey, 200, 'locationKey');
+  if (p.statusOverride !== undefined) {
+    if (p.statusOverride !== null && typeof p.statusOverride !== 'string') throw new HttpsError('invalid-argument', 'Invalid status override.');
+    patch.statusOverride = p.statusOverride;
+  }
+  if (p.scans !== undefined) {
+    if (!Array.isArray(p.scans) || p.scans.length > 50) throw new HttpsError('invalid-argument', 'Invalid scans.');
+    patch.scans = p.scans.map(c => str(c, 100, 'code'));
+  }
+
+  const { dref, existing } = await loadEditable(deliveryId, baseEditCount);
+  const email = auth.token.email || auth.uid;
+  const now = new Date().toISOString();
+
+  // Everything that needs expected seals is read here, outside the transaction.
+  const ctx = { admin: { email }, now, belongsTo: () => null };
+  const legacy = !Array.isArray(existing.seals);
+  if (!legacy && (patch.scans !== undefined || patch.locationKey !== undefined)) {
+    const targetKey = patch.locationKey !== undefined ? patch.locationKey : existing.location_key;
+    const eref = db.doc(`elections/${existing.election_id}`);
+    const [pubSnap, expSnap] = await Promise.all([
+      eref.collection('locations').doc(targetKey).get(), eref.collection('expected').doc(targetKey).get()
+    ]);
+    if (!pubSnap.exists || !expSnap.exists) throw new HttpsError('not-found', 'That location no longer exists in this election.');
+    ctx.pub = pubSnap.data();
+    ctx.expectedSlots = expSnap.data().slots;
+    const scans = patch.scans !== undefined ? mergeScans(existing, patch.scans, ctx.admin, now) : reconstructScans(existing);
+    const probe = computeDelivery(ctx.pub.slots, ctx.expectedSlots, scans);
+    const belongs = await resolveBelongsTo(eref, targetKey, probe.unexpected_seals);
+    ctx.belongsTo = c => belongs[normSeal(c)] || null;
+  }
+
+  let result;
+  try {
+    result = applyAdminEdit(existing, patch, ctx);
+  } catch (e) {
+    if (e.code) throw new HttpsError(e.code, e.message);
+    throw e;
+  }
+
+  await db.runTransaction(async (tx) => {
+    const cur = await tx.get(dref);
+    if (!cur.exists) throw new HttpsError('not-found', 'Record not found.');
+    if ((cur.data().edit_count || 0) !== baseEditCount) {
+      throw new HttpsError('aborted', 'This record was changed by someone else. Reload and try again.');
+    }
+    tx.update(dref, {
+      ...result.update,
+      edit_count: baseEditCount + 1,
+      last_edited_by: email,
+      last_edited_at: FieldValue.serverTimestamp()
+    });
+    tx.set(dref.collection('revisions').doc(), {
+      type: 'edit', by: email, at: FieldValue.serverTimestamp(), reason,
+      before: result.before, after: result.after
+    });
+  });
+
+  const merged = { ...existing, ...result.update };
+  return {
+    match_status: merged.match_status, computed_status: merged.computed_status || merged.match_status,
+    status_overridden: !!merged.status_overridden, edit_count: baseEditCount + 1
+  };
+});
+
+exports.adminSetDeliveryDeleted = onCall(async (req) => {
+  const auth = await requireAdmin(req);
+  const d = req.data || {};
+  const { deliveryId, baseEditCount, reason } = adminArgs(d);
+  if (typeof d.deleted !== 'boolean') throw new HttpsError('invalid-argument', 'Invalid deleted flag.');
+
+  const { dref, existing } = await loadEditable(deliveryId, baseEditCount);
+  if (!!existing.deleted === d.deleted) {
+    throw new HttpsError('failed-precondition', d.deleted ? 'Record is already deleted.' : 'Record is not deleted.');
+  }
+  const email = auth.token.email || auth.uid;
+
+  await db.runTransaction(async (tx) => {
+    const cur = await tx.get(dref);
+    if (!cur.exists) throw new HttpsError('not-found', 'Record not found.');
+    if ((cur.data().edit_count || 0) !== baseEditCount) {
+      throw new HttpsError('aborted', 'This record was changed by someone else. Reload and try again.');
+    }
+    tx.update(dref, d.deleted
+      ? { deleted: true, deleted_by: email, deleted_at: FieldValue.serverTimestamp(), delete_reason: reason, edit_count: baseEditCount + 1 }
+      : { deleted: false, deleted_by: FieldValue.delete(), deleted_at: FieldValue.delete(), delete_reason: FieldValue.delete(), edit_count: baseEditCount + 1 });
+    tx.set(dref.collection('revisions').doc(), {
+      type: d.deleted ? 'delete' : 'restore', by: email, at: FieldValue.serverTimestamp(), reason,
+      before: { deleted: !!existing.deleted }, after: { deleted: d.deleted }
+    });
+  });
+  return { deleted: d.deleted, edit_count: baseEditCount + 1 };
 });

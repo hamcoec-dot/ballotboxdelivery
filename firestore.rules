@@ -29,10 +29,17 @@ service cloud.firestore {
       }
     }
 
-    // Deliveries are created only by the submitDelivery Cloud Function, which computes match_status.
+    // Deliveries are created by submitDelivery and changed only by adminUpdateDelivery /
+    // adminSetDeliveryDeleted (Admin SDK bypasses rules). Clients can read (admins) but never write.
     match /deliveries/{deliveryId} {
-      allow create: if false;
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+
+      // Edit / delete / restore history (written by the functions)
+      match /revisions/{revisionId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
     }
 
     // Audit trail of every seal check (written by verifySeal).
