@@ -312,3 +312,14 @@ tr:hover {
 .scan-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .scan-controls select { max-width: 100%; }
 .scan-zoom { flex: 1; min-width: 120px; }
+
+/* Supplies checklist: touch-sized, mobile first */
+.supply-row { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+.supply-row.done .supply-name { color: var(--success-color); }
+.supply-name { font-weight: 700; font-size: 17px; }
+.supply-check { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: 2px solid var(--border-color); border-radius: 10px; font-size: 17px; font-weight: 600; cursor: pointer; background: var(--card-bg); }
+.supply-row.done .supply-check { border-color: var(--success-color); background: var(--success-bg); }
+.supply-check input[type="checkbox"] { width: 30px; height: 30px; flex: none; accent-color: var(--success-color); cursor: pointer; }
+.supply-qty { display: flex; align-items: center; gap: 12px; font-size: 16px; }
+.supply-qty input { width: 90px; min-height: 48px; font-size: 18px; text-align: center; }
+@media (min-width: 700px) { .supply-row { flex-direction: row; align-items: center; justify-content: space-between; } .supply-name { flex: 1; } }

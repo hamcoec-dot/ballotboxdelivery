@@ -670,12 +670,11 @@
       if (!items.length) { list.innerHTML = '<p style="font-size:14px; color: var(--text-muted);">No supplies are listed for this stop.</p>'; return; }
       list.innerHTML = items.map(x => {
         const st = supplyState[x.key] || { delivered: false, qty: 0 };
-        return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border-color); flex-wrap:wrap;">
-          <div style="font-weight:600;">${escapeHtml(x.label)} &mdash; ${x.qty}</div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" data-supply="${escapeHtml(x.key)}" ${st.delivered ? 'checked' : ''}> Delivered</label>
-            ${st.delivered ? '' : `<label style="display:flex; align-items:center; gap:4px;">Qty <input type="number" inputmode="numeric" min="0" max="${x.qty}" value="${st.qty}" data-supply-qty="${escapeHtml(x.key)}" style="width:70px;"></label>`}
-          </div></div>`;
+        return `<div class="supply-row${st.delivered ? ' done' : ''}">
+          <div class="supply-name">${escapeHtml(x.label)} &mdash; ${x.qty}</div>
+          <label class="supply-check"><input type="checkbox" data-supply="${escapeHtml(x.key)}" ${st.delivered ? 'checked' : ''}> <span>Delivered</span></label>
+          ${st.delivered ? '' : `<label class="supply-qty">Qty delivered <input type="number" inputmode="numeric" min="0" max="${x.qty}" value="${st.qty}" data-supply-qty="${escapeHtml(x.key)}"></label>`}
+        </div>`;
       }).join('');
     }
 
