@@ -89,7 +89,7 @@ Do not commit export files (`*.csv` is git-ignored).
 
 ## ☁️ Cloud Functions
 
-Source in `functions/` (Node 20, 2nd gen, `us-east1`). Requires the Blaze plan.
+Source in `functions/` (Node 22, 2nd gen, `us-east1`). Requires the Blaze plan.
 
 ```bash
 cd functions && npm install && npm test        # unit tests (synthetic data only)

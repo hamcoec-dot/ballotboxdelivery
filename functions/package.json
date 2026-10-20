@@ -1,7 +1,7 @@
 {
   "name": "hcec-ballot-box-functions",
   "private": true,
-  "engines": { "node": "20" },
+  "engines": { "node": "22" },
   "main": "src/index.js",
   "scripts": {
     "test": "node --test test/*.test.js"
