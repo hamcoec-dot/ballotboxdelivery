@@ -5,7 +5,7 @@ const m = require('../src/manifest');
 const { PRECINCT_CSV, MACHINE_CSV, PRECINCT_HEADER, prow, mrow, MACHINE_HEADER } = require('./fixtures');
 
 const build = (machine = MACHINE_CSV, precinct = PRECINCT_CSV, warnings = []) =>
-  m.buildManifest(m.csvToObjects(machine), m.parsePrecinctsCSV(precinct, w => warnings.push(w)), w => warnings.push(w));
+  m.buildManifest(m.csvToObjects(machine), m.parsePrecinctsCSV(precinct, w => warnings.push(w)), [], w => warnings.push(w));
 
 test('parseCSV handles BOM, CRLF, quotes, escapes, blank lines, multiline fields', () => {
   assert.deepEqual(m.parseCSV('﻿a,b\r\n"x, y","he said ""hi"""\r\n\r\n1,2'), [['a', 'b'], ['x, y', 'he said "hi"'], ['1', '2']]);

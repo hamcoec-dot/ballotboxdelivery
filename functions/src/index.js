@@ -3,8 +3,8 @@ const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { csvToObjects, parsePrecinctsCSV, buildManifest, normSeal } = require('./manifest');
-const { splitLocation, matchSlot, computeDelivery, reconstructScans, mergeScans, applyAdminEdit, UUID_RE } = require('./delivery');
+const { csvToObjects, parsePrecinctsCSV, parseScheduleCSV, buildManifest, normSeal } = require('./manifest');
+const { splitLocation, matchSlot, computeDelivery, computeSupplies, reconstructScans, mergeScans, applyAdminEdit, UUID_RE } = require('./delivery');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'us-east1', maxInstances: 10 });
@@ -55,14 +55,19 @@ async function deleteCollection(ref) {
 
 exports.importElection = onCall({ memory: '512MiB', timeoutSeconds: 120 }, async (req) => {
   const auth = await requireAdmin(req);
-  const { machineCsv, precinctCsv, commit } = req.data || {};
+  const { machineCsv, precinctCsv, scheduleCsv, commit } = req.data || {};
   str(machineCsv, 5000000, 'machineCsv');
   str(precinctCsv, 5000000, 'precinctCsv');
+  if (typeof scheduleCsv !== 'string' || !scheduleCsv.trim()) {
+    throw new HttpsError('invalid-argument', 'The delivery schedule export is required (it sets the delivery order).');
+  }
+  str(scheduleCsv, 5000000, 'scheduleCsv');
 
   const warnings = [];
   let manifest;
   try {
-    manifest = buildManifest(csvToObjects(machineCsv), parsePrecinctsCSV(precinctCsv, w => warnings.push(w)), w => warnings.push(w));
+    const warn = w => warnings.push(w);
+    manifest = buildManifest(csvToObjects(machineCsv), parsePrecinctsCSV(precinctCsv, warn), parseScheduleCSV(scheduleCsv, warn), warn);
   } catch (e) {
     throw new HttpsError('invalid-argument', e.message);
   }
@@ -78,10 +83,16 @@ exports.importElection = onCall({ memory: '512MiB', timeoutSeconds: 120 }, async
     .flatMap(b => b.machines.map(m => `${m.precinct} ${m.machine}`.trim()));
   const noMachine = manifest.filter(b => !b.machines.length).map(b => b.location_name);
 
+  const days = {};
+  const supplyTotals = {};
+  manifest.forEach(b => {
+    if (b.route.day != null) days[b.route.day] = (days[b.route.day] || 0) + 1;
+    b.supplies.forEach(s => { supplyTotals[s.label] = (supplyTotals[s.label] || 0) + s.qty; });
+  });
   const preview = {
-    election, buildings: manifest.length, seals: sealCount,
+    election, buildings: manifest.length, seals: sealCount, days, supplyTotals,
     unassigned, noMachineBuildings: noMachine, warnings,
-    locations: manifest.map(b => ({ name: b.location_name, seals: b.machines.length, precincts: b.precincts.length }))
+    locations: manifest.map(b => ({ name: b.location_name, route: b.route.label, seals: b.machines.length, precincts: b.precincts.length }))
   };
   if (!commit) return { committed: false, ...preview };
 
@@ -162,6 +173,14 @@ exports.submitDelivery = onCall(async (req) => {
     at: typeof (s && s.at) === 'string' ? s.at.slice(0, 40) : null
   }));
   if (!scans.length) throw new HttpsError('invalid-argument', 'At least one scan is required.');
+  if (d.supplies !== undefined && (!Array.isArray(d.supplies) || d.supplies.length > 50)) {
+    throw new HttpsError('invalid-argument', 'Invalid supplies.');
+  }
+  const submittedSupplies = (d.supplies || []).map(x => ({
+    key: str(String(x && x.key), 100, 'supply key'),
+    delivered: !!(x && x.delivered === true),
+    qty: x && Number.isFinite(x.qty) ? x.qty : undefined
+  }));
 
   let photoPath = '';
   if (d.photoPath) {
@@ -172,7 +191,7 @@ exports.submitDelivery = onCall(async (req) => {
   if (d.gps && Number.isFinite(d.gps.lat) && Number.isFinite(d.gps.lon)) gps = { lat: d.gps.lat, lon: d.gps.lon };
 
   const dref = db.doc(`deliveries/${clientId}`);
-  const summary = (e) => ({ match_status: e.match_status, scanned_count: e.scanned_count, expected_count: e.expected_count, duplicate: true });
+  const summary = (e) => ({ match_status: e.match_status, scanned_count: e.scanned_count, expected_count: e.expected_count, supplies_status: e.supplies_status || null, duplicate: true });
   const existing = await dref.get();
   if (existing.exists) {
     if (existing.data().driver_uid !== auth.uid) throw new HttpsError('already-exists', 'Duplicate delivery id.');
@@ -196,6 +215,7 @@ exports.submitDelivery = onCall(async (req) => {
     location_key: locationKey, location_name: pub.location_name, address: pub.address, precincts: pub.precincts,
     ...result,
     computed_status: result.match_status, status_overridden: false, edit_count: 0,
+    ...computeSupplies(pub.supplies, submittedSupplies), route: pub.route || null,
     notes, photo_path: photoPath, photo_url: '',
     driver_uid: auth.uid, driver_email: auth.token.email || 'unknown',
     gps,
@@ -207,7 +227,7 @@ exports.submitDelivery = onCall(async (req) => {
     if (e.code === 6) return summary((await dref.get()).data()); // concurrent retry
     throw e;
   }
-  return { match_status: result.match_status, scanned_count: result.scanned_count, expected_count: result.expected_count };
+  return { match_status: result.match_status, scanned_count: result.scanned_count, expected_count: result.expected_count, supplies_status: record.supplies_status };
 });
 
 // ---------------------------------------------------------------- admin edit / soft delete
@@ -252,6 +272,14 @@ exports.adminUpdateDelivery = onCall(async (req) => {
     if (p.statusOverride !== null && typeof p.statusOverride !== 'string') throw new HttpsError('invalid-argument', 'Invalid status override.');
     patch.statusOverride = p.statusOverride;
   }
+  if (p.supplies !== undefined) {
+    if (!Array.isArray(p.supplies) || p.supplies.length > 50) throw new HttpsError('invalid-argument', 'Invalid supplies.');
+    patch.supplies = p.supplies.map(x => ({
+      key: str(String(x && x.key), 100, 'supply key'),
+      delivered: !!(x && x.delivered === true),
+      qty: x && Number.isFinite(x.qty) ? x.qty : undefined
+    }));
+  }
   if (p.scans !== undefined) {
     if (!Array.isArray(p.scans) || p.scans.length > 50) throw new HttpsError('invalid-argument', 'Invalid scans.');
     patch.scans = p.scans.map(c => str(c, 100, 'code'));
@@ -264,7 +292,7 @@ exports.adminUpdateDelivery = onCall(async (req) => {
   // Everything that needs expected seals is read here, outside the transaction.
   const ctx = { admin: { email }, now, belongsTo: () => null };
   const legacy = !Array.isArray(existing.seals);
-  if (!legacy && (patch.scans !== undefined || patch.locationKey !== undefined)) {
+  if (!legacy && (patch.scans !== undefined || patch.locationKey !== undefined || patch.supplies !== undefined)) {
     const targetKey = patch.locationKey !== undefined ? patch.locationKey : existing.location_key;
     const eref = db.doc(`elections/${existing.election_id}`);
     const [pubSnap, expSnap] = await Promise.all([

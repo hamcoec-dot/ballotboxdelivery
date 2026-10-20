@@ -20,7 +20,13 @@ function splitLocation(building) {
       address: building.address,
       precincts: building.precincts,
       slots,
-      seal_count: slots.length
+      seal_count: slots.length,
+      // From the delivery schedule export (readable by any signed-in user, like the printed schedule)
+      route: building.route || { day: null, stop: null, label: '', index: 9999 },
+      supplies: building.supplies || [],
+      ballot_boxes: building.ballot_boxes || 0,
+      contacts: building.contacts || [],
+      schedule_pp_ids: building.schedule_pp_ids || []
     },
     expected: {
       slots: building.machines.map((m, i) => ({ slot: i, lid_sn: normSeal(m.lid_sn) }))
@@ -76,6 +82,23 @@ function computeDelivery(pubSlots, expectedSlots, scans, belongsTo = () => null)
   };
 }
 
+// Supplies for a delivery. The server's expected quantities (pubSupplies = [{key,label,qty}]) are the
+// source of truth; the client only says delivered / how many. Quantities are clamped to 0..expected,
+// unknown keys are ignored and a missing key counts as not delivered.
+function computeSupplies(pubSupplies, submitted) {
+  const byKey = new Map();
+  (Array.isArray(submitted) ? submitted : []).forEach(x => { if (x && typeof x.key === 'string') byKey.set(x.key, x); });
+  const supplies = (pubSupplies || []).map(p => {
+    const x = byKey.get(p.key);
+    let delivered = !!(x && x.delivered === true);
+    let qty = delivered ? p.qty
+      : (x && Number.isFinite(x.qty) ? Math.max(0, Math.min(p.qty, Math.floor(x.qty))) : 0);
+    if (!delivered && qty >= p.qty) delivered = true;      // entered the full amount
+    return { key: p.key, label: p.label, expected: p.qty, delivered_qty: qty, delivered };
+  });
+  return { supplies, supplies_status: supplies.every(s => s.delivered) ? 'COMPLETE' : 'SHORT' };
+}
+
 // The scans of an existing record. Records written before scans[] existed are rebuilt from
 // scanned_barcode plus unexpected_seals (which kept their source/time); matched codes lose theirs.
 function reconstructScans(existing) {
@@ -117,7 +140,7 @@ const sameKeys = (a, b) => {
 function applyAdminEdit(existing, patch, ctx) {
   if (existing.deleted) throw fail('failed-precondition', 'Record is deleted; restore it first.');
   const legacy = !Array.isArray(existing.seals);
-  if (legacy && (patch.locationKey !== undefined || patch.scans !== undefined || patch.statusOverride !== undefined)) {
+  if (legacy && (patch.locationKey !== undefined || patch.scans !== undefined || patch.statusOverride !== undefined || patch.supplies !== undefined)) {
     throw fail('failed-precondition', 'Legacy record: only notes can be edited.');
   }
   if (patch.statusOverride !== undefined && patch.statusOverride !== null && !STATUSES.includes(patch.statusOverride)) {
@@ -149,6 +172,7 @@ function applyAdminEdit(existing, patch, ctx) {
         set('location_name', ctx.pub.location_name);
         set('address', ctx.pub.address);
         set('precincts', ctx.pub.precincts);
+        set('route', ctx.pub.route || null);
       }
       set('scans', r.scans);
       set('seals', r.seals);
@@ -158,6 +182,17 @@ function applyAdminEdit(existing, patch, ctx) {
       set('scanned_barcode', r.scanned_barcode);
       set('expected_barcode', r.expected_barcode);
       computed = r.match_status;
+    }
+
+    // Supplies: explicit patch, or (on a location change) re-derive from what was recorded, by key,
+    // against the new location's expected quantities.
+    if (patch.supplies !== undefined || (locationChanged && Array.isArray(existing.supplies))) {
+      const submitted = patch.supplies !== undefined
+        ? patch.supplies
+        : existing.supplies.map(x => ({ key: x.key, delivered: x.delivered, qty: x.delivered_qty }));
+      const sp = computeSupplies(ctx.pub.supplies, submitted);
+      set('supplies', sp.supplies);
+      set('supplies_status', sp.supplies_status);
     }
 
     // An override persists across scan/location edits until the admin explicitly picks Auto (null).
@@ -178,6 +213,6 @@ function applyAdminEdit(existing, patch, ctx) {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 module.exports = {
-  splitLocation, matchSlot, computeDelivery, reconstructScans, mergeScans, applyAdminEdit,
+  splitLocation, matchSlot, computeDelivery, computeSupplies, reconstructScans, mergeScans, applyAdminEdit,
   UUID_RE, SOURCES, STATUSES
 };

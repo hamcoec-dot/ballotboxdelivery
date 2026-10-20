@@ -68,15 +68,25 @@ Admins are an allowlist of Firebase Auth UIDs in the Firestore `admins` collecti
 
 ## 📄 Importing an Election (Admin)
 
-Seal numbers are **never** stored in the repo or sent to drivers' browsers. Each election an admin imports the two election-office exports in the app:
+Seal numbers are **never** stored in the repo or sent to drivers' browsers. Each election an admin imports **three** election-office exports in the app:
+
+| Export | Gives the app |
+|---|---|
+| Machine data (e.g. `November26MachineData.csv`) | Election name and date, one seal per machine (`Ballot box lid SN`, kept server-side only) |
+| Precincts and polling places (e.g. `2611 Nov 26 Precincts and polling places.csv`) | Building name and address per precinct |
+| Delivery schedule (e.g. `Ballot Box Delivery Schedule 2611 Nov 26.csv`) | Delivery order (day and stop), the supplies each stop gets, and the facility contacts |
 
 1. Sign in as an admin, open **Import Election Data**.
-2. Choose the machine data export and the precincts/polling places export (saved CSVs, unchanged).
-3. **Preview** (check location and seal counts and any warnings), then **Publish**. The imported election becomes the active one.
+2. Choose all three files (saved CSVs, unchanged). The schedule is required because it sets the delivery order.
+3. **Preview** (check location and seal counts, stops per day, supply totals and any warnings), then **Publish**. The imported election becomes the active one.
 
 How it works:
 - Machines join to precincts on `CPN` = `CountyPrecinctNum` (fallback: precinct name). Rows with an empty `Ballot box lid SN` are skipped.
 - A delivery stop is one physical building; all seals of every precinct in it are scanned in one delivery.
+- The schedule joins on its `Precinct` column = the machine export's `Polling Place` (uppercased). `Day` is `day.stop` (e.g. `1.01`, `3.30`) and the file's row order is the route. A building with several schedule rows (for example two precincts sharing a church) appears once, at its first stop, with the supplies summed and the contacts combined.
+- Supply columns are every column between `Ballot Boxes` and `Adjust Row Hight in Points`, so new supply columns work without code changes. A blank cell means 0. The preview warns when the totals row, ballot-box counts or matches look wrong.
+- Drivers see stops grouped by day in route order, a supplies checklist (Delivered, or the quantity actually delivered), and the facility contacts. Delivery status for supplies is stored separately (`COMPLETE` or `SHORT`) from the seal status.
+- **Contacts are readable by any signed-in user**, including notes such as door codes. That is the same audience as the printed schedule.
 - The `precincts` export has unquoted commas in its address fields; it is parsed positionally, so do not hand-edit it.
 - Only the columns needed are stored. The expected seal numbers live in `elections/{id}/expected/*`, which no client can read.
 - Drivers' scans are checked by the `verifySeal` Cloud Function (match or no match only; 15 wrong attempts per location locks that driver out until an admin deletes their `rate_limits` doc).

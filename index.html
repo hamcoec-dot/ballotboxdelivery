@@ -88,7 +88,9 @@
           <input type="text" id="pollingSearch" placeholder="Type precinct number, name, or address..." onkeyup="filterPollingPlaces()">
         </div>
 
-        <div id="pollingPlacesList" class="flex-grid">
+        <div id="dayChips" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;"></div>
+
+        <div id="pollingPlacesList">
           <!-- Dynamically populated -->
         </div>
       </div>
@@ -99,6 +101,7 @@
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
           <div>
+            <div id="deliveryStop" style="font-weight: 700; color: var(--primary-color);"></div>
             <h2 id="deliveryLocationName" class="card-title" style="margin-bottom: 4px !important;">Brainerd Recreation Center</h2>
             <p id="deliveryLocationAddress" style="font-size: 14px; color: var(--text-muted);"></p>
           </div>
@@ -106,6 +109,11 @@
             &larr; Change Location
           </button>
         </div>
+
+        <details id="contactsBox" style="margin-bottom: 16px; display: none;">
+          <summary id="contactsSummary" style="cursor: pointer; font-weight: 700;">Contacts</summary>
+          <div id="contactsList" style="font-size: 14px; margin-top: 8px;"></div>
+        </details>
 
         <div id="deliveryAlert" class="alert" style="display: none;" role="alert"></div>
 
@@ -137,9 +145,17 @@
           <div id="sealToast" class="alert alert-warning" style="display: none;"></div>
         </div>
 
-        <!-- Section B: Delivery Photo -->
+        <!-- Section B: Supplies -->
         <div style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
-          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 2: Take Delivery Photo</h3>
+          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 2: Supplies</h3>
+          <p id="ballotBoxLine" style="font-size: 14px; margin-bottom: 8px;"></p>
+          <p id="suppliesProgress" style="font-weight: 700; margin-bottom: 8px;"></p>
+          <div id="suppliesList"></div>
+        </div>
+
+        <!-- Section C: Delivery Photo -->
+        <div style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 3: Take Delivery Photo</h3>
           <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">Capture a photo showing the seal and machine delivered at location.</p>
           
           <input type="file" id="photoInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoCaptured(event)">
@@ -153,9 +169,9 @@
           </div>
         </div>
 
-        <!-- Section C: GPS & Notes -->
+        <!-- Section D: GPS & Notes -->
         <div style="margin-bottom: 24px;">
-          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 3: Notes &amp; Custody Details</h3>
+          <h3 style="font-size: 16px; margin-bottom: 12px;">Step 4: Notes &amp; Custody Details</h3>
           
           <div class="form-group">
             <label for="deliveryNotes">Delivery Notes (Optional)</label>
@@ -179,7 +195,7 @@
       <div class="card" style="margin-bottom: 16px;">
         <details id="importCard">
           <summary style="cursor: pointer; font-weight: 700;" onclick="loadElectionList()">Import Election Data</summary>
-          <p style="font-size: 14px; color: var(--text-muted); margin: 8px 0 12px;">Upload the two election-office exports. Seal numbers are stored server-side only and are never sent to drivers. Importing makes that election the active one.</p>
+          <p style="font-size: 14px; color: var(--text-muted); margin: 8px 0 12px;">Upload the three election-office exports (machine data, precincts and polling places, delivery schedule). Seal numbers are stored server-side only and are never sent to drivers. Importing makes that election the active one.</p>
           <div class="form-group">
             <label for="importMachine">Machine data export (CSV)</label>
             <input type="file" id="importMachine" accept=".csv,text/csv" onchange="invalidateImportPreview()">
@@ -187,6 +203,10 @@
           <div class="form-group">
             <label for="importPrecinct">Precincts and polling places export (CSV)</label>
             <input type="file" id="importPrecinct" accept=".csv,text/csv" onchange="invalidateImportPreview()">
+          </div>
+          <div class="form-group">
+            <label for="importSchedule">Delivery schedule export (CSV)</label>
+            <input type="file" id="importSchedule" accept=".csv,text/csv" onchange="invalidateImportPreview()">
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
             <button type="button" id="btnImportPreview" class="btn btn-small btn-secondary" onclick="runImport(false)">Preview</button>
@@ -216,10 +236,12 @@
             <thead>
               <tr>
                 <th scope="col">Timestamp</th>
+                <th scope="col">Stop</th>
                 <th scope="col">Precinct / Location</th>
                 <th scope="col">Scanned Seal</th>
                 <th scope="col">Expected Seal</th>
                 <th scope="col">Status</th>
+                <th scope="col">Supplies</th>
                 <th scope="col">Driver</th>
                 <th scope="col">Photo</th>
                 <th scope="col">Actions</th>
@@ -239,10 +261,12 @@
             <thead>
               <tr>
                 <th scope="col">Timestamp</th>
+                <th scope="col">Stop</th>
                 <th scope="col">Precinct / Location</th>
                 <th scope="col">Scanned Seal</th>
                 <th scope="col">Expected Seal</th>
                 <th scope="col">Status</th>
+                <th scope="col">Supplies</th>
                 <th scope="col">Driver</th>
                 <th scope="col">Photo</th>
               </tr>
@@ -260,10 +284,12 @@
               <thead>
                 <tr>
                   <th scope="col">Timestamp</th>
+                  <th scope="col">Stop</th>
                   <th scope="col">Precinct / Location</th>
                   <th scope="col">Scanned Seal</th>
                   <th scope="col">Expected Seal</th>
                   <th scope="col">Status</th>
+                  <th scope="col">Supplies</th>
                   <th scope="col">Driver</th>
                   <th scope="col">Photo</th>
                   <th scope="col">Deleted</th>
@@ -294,6 +320,10 @@
               <option value="INCOMPLETE">Override: INCOMPLETE</option>
               <option value="MISMATCH">Override: MISMATCH</option>
             </select>
+          </div>
+          <div id="editSuppliesBox" class="form-group" style="display: none;">
+            <label>Supplies</label>
+            <div id="editSupplies" style="font-size: 14px;"></div>
           </div>
           <div class="form-group">
             <label for="editNotes">Notes</label>
@@ -407,11 +437,13 @@
             data.push({
               election_id: e.id, election_name: ed.name, election_date: ed.date,
               location_key: x.location_key, location_name: x.location_name, address: x.address || '',
-              precincts: x.precincts || [], slots: x.slots || []
+              precincts: x.precincts || [], slots: x.slots || [],
+              route: x.route || { day: null, stop: null, label: '', index: 9999 },
+              supplies: x.supplies || [], ballot_boxes: x.ballot_boxes || 0, contacts: x.contacts || []
             });
           });
         }
-        data.sort((a, b) => a.location_name.localeCompare(b.location_name));
+        data.sort((a, b) => (a.route.index - b.route.index) || a.location_name.localeCompare(b.location_name));
         manifestData = data;
         renderElections();
         if (auditDocs.length) renderAudit();
@@ -469,45 +501,91 @@
 
     const precinctListText = (b) => b.precincts.map(p => `${p.name} (${p.num})`).join(', ');
 
-    // Render Polling Places View (one card per building)
+    // Day filter chips (remembered per device; localStorage may be unavailable)
+    let dayFilter = 'all';
+    try { dayFilter = localStorage.getItem('hcec_day_filter') || 'all'; } catch (e) { /* ignore */ }
+    function setDayFilter(v) {
+      dayFilter = v;
+      try { localStorage.setItem('hcec_day_filter', v); } catch (e) { /* ignore */ }
+      renderPollingPlaces();
+    }
+
+    // Render Polling Places View: one card per building, in route order, grouped by day
     function renderPollingPlaces() {
       const listContainer = document.getElementById('pollingPlacesList');
       listContainer.innerHTML = '';
+      const items = manifestData.filter(item => item.election_id === selectedElection.id);
 
-      manifestData.filter(item => item.election_id === selectedElection.id).forEach(item => {
-        const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(item.address)}`;
-        const noSeals = item.slots.length === 0;
-        const card = document.createElement('div');
-        card.className = 'flex-card';
-        card.innerHTML = `
-          <div style="font-weight: 700; font-size: 14px; color: var(--primary-color);">${escapeHtml(precinctListText(item))}</div>
-          <h3 style="margin: 4px 0;">${escapeHtml(item.location_name)}</h3>
-          ${item.address ? `<p style="font-size: 14px; margin-bottom: 8px;">
-            <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(item.address)}</a>
-          </p>` : ''}
-          <p style="font-size: 14px; margin-bottom: 8px;${noSeals ? ' color: var(--danger-color);' : ''}">
-            ${noSeals ? '&#x26A0;&#xFE0F; No seals on file' : `&#x1F512; ${item.slots.length} seal${item.slots.length === 1 ? '' : 's'}`}
-          </p>
-        `;
-        const link = card.querySelector('.map-link');
-        if (link) link.addEventListener('click', e => e.stopPropagation());
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn btn-small';
-        btn.innerHTML = 'Start Delivery &rarr;';
-        btn.setAttribute('aria-label', `Select ${item.location_name} for delivery`);
-        btn.addEventListener('click', () => selectPollingPlace(item.location_key));
-        card.appendChild(btn);
-        listContainer.appendChild(card);
+      const days = [...new Set(items.map(i => i.route.day).filter(d => d != null))].sort((a, b) => a - b);
+      const hasUnscheduled = items.some(i => i.route.day == null);
+      if (dayFilter !== 'all' && !days.includes(Number(dayFilter))) dayFilter = 'all';
+
+      const chips = document.getElementById('dayChips');
+      chips.innerHTML = '';
+      const addChip = (value, label) => {
+        const c = document.createElement('button');
+        c.type = 'button';
+        c.className = 'btn btn-small' + (String(dayFilter) === String(value) ? '' : ' btn-outline');
+        c.textContent = label;
+        c.addEventListener('click', () => setDayFilter(value));
+        chips.appendChild(c);
+      };
+      if (days.length > 1) { addChip('all', 'All'); days.forEach(d => addChip(d, 'Day ' + d)); }
+
+      const groups = days.map(d => ({ day: d, title: 'Day ' + d, list: items.filter(i => i.route.day === d) }));
+      if (hasUnscheduled) groups.push({ day: null, title: 'Other stops', list: items.filter(i => i.route.day == null) });
+
+      groups.forEach(g => {
+        if (dayFilter !== 'all' && String(g.day) !== String(dayFilter)) return;
+        const section = document.createElement('section');
+        section.className = 'day-group';
+        section.innerHTML = `<h3 class="day-heading" style="margin: 16px 0 8px;">${escapeHtml(g.title)} (${g.list.length} stop${g.list.length === 1 ? '' : 's'})</h3>`;
+        const grid = document.createElement('div');
+        grid.className = 'flex-grid';
+        g.list.forEach(item => grid.appendChild(buildStopCard(item)));
+        section.appendChild(grid);
+        listContainer.appendChild(section);
       });
+      filterPollingPlaces();
+    }
+
+    function buildStopCard(item) {
+      const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(item.address)}`;
+      const noSeals = item.slots.length === 0;
+      const card = document.createElement('div');
+      card.className = 'flex-card';
+      card.innerHTML = `
+        <div style="font-weight: 700; font-size: 14px; color: var(--primary-color);">${item.route.label ? `<span>Stop ${escapeHtml(item.route.label)}</span> &middot; ` : ''}${escapeHtml(precinctListText(item))}</div>
+        <h3 style="margin: 4px 0;">${escapeHtml(item.location_name)}</h3>
+        ${item.address ? `<p style="font-size: 14px; margin-bottom: 8px;">
+          <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(item.address)}</a>
+        </p>` : ''}
+        <p style="font-size: 14px; margin-bottom: 8px;${noSeals ? ' color: var(--danger-color);' : ''}">
+          ${noSeals ? '&#x26A0;&#xFE0F; No seals on file' : `&#x1F512; ${item.slots.length} seal${item.slots.length === 1 ? '' : 's'}`}${item.supplies.length ? ` &middot; &#x1F9F0; ${item.supplies.length} supply item${item.supplies.length === 1 ? '' : 's'}` : ''}
+        </p>
+      `;
+      const link = card.querySelector('.map-link');
+      if (link) link.addEventListener('click', e => e.stopPropagation());
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-small';
+      btn.innerHTML = 'Start Delivery &rarr;';
+      btn.setAttribute('aria-label', `Select ${item.location_name} for delivery`);
+      btn.addEventListener('click', () => selectPollingPlace(item.location_key));
+      card.appendChild(btn);
+      return card;
     }
 
     function filterPollingPlaces() {
       const query = document.getElementById('pollingSearch').value.toLowerCase();
-      const cards = document.getElementById('pollingPlacesList').getElementsByClassName('flex-card');
-      Array.from(cards).forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(query) ? 'block' : 'none';
+      document.querySelectorAll('#pollingPlacesList .day-group').forEach(group => {
+        let visible = 0;
+        group.querySelectorAll('.flex-card').forEach(card => {
+          const show = card.textContent.toLowerCase().includes(query);
+          card.style.display = show ? 'block' : 'none';
+          if (show) visible++;
+        });
+        group.style.display = visible ? '' : 'none';
       });
     }
 
@@ -524,6 +602,12 @@
           ? `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="map-link">&#x1F4CD; ${escapeHtml(selectedPollingPlace.address)}</a>`
           : '');
 
+      document.getElementById('deliveryStop').textContent = selectedPollingPlace.route.label ? 'Stop ' + selectedPollingPlace.route.label : '';
+      renderContacts(selectedPollingPlace.contacts);
+      supplyState = {};
+      selectedPollingPlace.supplies.forEach(x => { supplyState[x.key] = { delivered: false, qty: 0 }; });
+      renderSupplies();
+
       // Reset form fields
       if (html5QrcodeScanner) stopBarcodeScanner();
       scannedSeals = [];
@@ -537,6 +621,76 @@
 
       showView('viewDelivery');
     }
+
+    // ---- Contacts (text from the delivery schedule; everything is escaped, phone numbers become tel: links) ----
+    const PHONE_RE = /(\(?\d{3}\)?[\s.-]*\d{3}[\s.-]\d{4})/g;
+    function linkifyPhones(text) {
+      return String(text).split(PHONE_RE).map((part, i) => {
+        if (i % 2 === 0) return escapeHtml(part);
+        const digits = part.replace(/\D/g, '');
+        return digits.length === 10 ? `<a href="tel:+1${digits}" class="map-link">${escapeHtml(part)}</a>` : escapeHtml(part);
+      }).join('');
+    }
+
+    function renderContacts(contacts) {
+      const box = document.getElementById('contactsBox');
+      if (!contacts || !contacts.length) { box.style.display = 'none'; return; }
+      box.style.display = '';
+      const count = contacts.filter(c => !c.startsWith('\u2014')).length;
+      document.getElementById('contactsSummary').textContent = `Contacts (${count})`;
+      document.getElementById('contactsList').innerHTML = contacts.map(c => c.startsWith('\u2014')
+        ? `<div style="font-weight:700; margin-top:8px;">${escapeHtml(c.replace(/^\u2014\s*/, ''))}</div>`
+        : `<div>${linkifyPhones(c)}</div>`).join('');
+    }
+
+    // ---- Supplies checklist: per item Delivered, or the quantity actually delivered when it is not ----
+    let supplyState = {};
+    const supplyConfirmed = (item) => {
+      const st = supplyState[item.key] || { delivered: false, qty: 0 };
+      return st.delivered || st.qty >= item.qty;
+    };
+    const supplyShortList = () => selectedPollingPlace.supplies.filter(x => !supplyConfirmed(x))
+      .map(x => `${x.label} ${supplyState[x.key].delivered ? x.qty : supplyState[x.key].qty} of ${x.qty}`);
+
+    function renderSupplies() {
+      if (!selectedPollingPlace) return;
+      const items = selectedPollingPlace.supplies;
+      const verified = sealStatus().seals.filter(s => s.scanned).length;
+      const boxes = selectedPollingPlace.ballot_boxes || selectedPollingPlace.slots.length;
+      document.getElementById('ballotBoxLine').innerHTML =
+        `&#x1F4E6; Ballot boxes: <strong>${boxes}</strong> &middot; ${verified} seal${verified === 1 ? '' : 's'} verified`;
+      const done = items.filter(supplyConfirmed).length;
+      document.getElementById('suppliesProgress').textContent = items.length ? `${done} of ${items.length} items confirmed` : '';
+      const list = document.getElementById('suppliesList');
+      if (!items.length) { list.innerHTML = '<p style="font-size:14px; color: var(--text-muted);">No supplies are listed for this stop.</p>'; return; }
+      list.innerHTML = items.map(x => {
+        const st = supplyState[x.key] || { delivered: false, qty: 0 };
+        return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border-color); flex-wrap:wrap;">
+          <div style="font-weight:600;">${escapeHtml(x.label)} &mdash; ${x.qty}</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" data-supply="${escapeHtml(x.key)}" ${st.delivered ? 'checked' : ''}> Delivered</label>
+            ${st.delivered ? '' : `<label style="display:flex; align-items:center; gap:4px;">Qty <input type="number" inputmode="numeric" min="0" max="${x.qty}" value="${st.qty}" data-supply-qty="${escapeHtml(x.key)}" style="width:70px;"></label>`}
+          </div></div>`;
+      }).join('');
+    }
+
+    document.addEventListener('change', (e) => {
+      const cb = e.target.closest && e.target.closest('input[data-supply]');
+      if (cb && selectedPollingPlace) {
+        supplyState[cb.dataset.supply] = { delivered: cb.checked, qty: cb.checked ? 0 : (supplyState[cb.dataset.supply] || {}).qty || 0 };
+        renderSupplies();
+      }
+    });
+    document.addEventListener('input', (e) => {
+      const q = e.target.closest && e.target.closest('input[data-supply-qty]');
+      if (!q || !selectedPollingPlace) return;
+      const item = selectedPollingPlace.supplies.find(x => x.key === q.dataset.supplyQty);
+      const n = Math.max(0, Math.min(item.qty, Math.floor(Number(q.value) || 0)));
+      supplyState[item.key] = { delivered: false, qty: n };
+      // update the progress line only, so the input keeps focus while typing
+      const done = selectedPollingPlace.supplies.filter(supplyConfirmed).length;
+      document.getElementById('suppliesProgress').textContent = `${done} of ${selectedPollingPlace.supplies.length} items confirmed`;
+    });
 
     // Seal checklist. A slot counts as scanned only after the server confirmed the code (state 'match').
     function sealStatus() {
@@ -584,6 +738,7 @@
       });
       if (rows.length) html += '<h4 style="margin:12px 0 4px;">Scans needing attention</h4>' + rows.join('');
       document.getElementById('sealChecklist').innerHTML = html;
+      renderSupplies();
     }
 
     function showSealToast(msg) {
@@ -863,6 +1018,9 @@
         if (!confirm(text)) return;
       }
 
+      const short = supplyShortList();
+      if (short.length && !confirm(`Supplies short: ${short.join(', ')}. Submit anyway?`)) return;
+
       const clientId = (crypto.randomUUID ? crypto.randomUUID()
         : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
       const entry = {
@@ -872,6 +1030,10 @@
         payload: {
           clientId, electionId: selectedElection.id, locationKey: selectedPollingPlace.location_key,
           scans: scannedSeals.map(s => ({ code: s.code, source: s.source, at: s.at })),
+          supplies: selectedPollingPlace.supplies.map(x => {
+            const st = supplyState[x.key] || { delivered: false, qty: 0 };
+            return st.delivered ? { key: x.key, delivered: true } : { key: x.key, delivered: false, qty: st.qty };
+          }),
           notes, gps: currentGps
         }
       };
@@ -883,7 +1045,7 @@
         if (!navigator.onLine) throw Object.assign(new Error('offline'), { code: 'functions/unavailable' });
         const r = await sendDelivery(entry);
         show(r.match_status === 'MATCH' ? 'alert-success' : 'alert-warning',
-          `&#x2705; Delivery recorded &mdash; <strong>${escapeHtml(r.match_status)}</strong> (${r.scanned_count} of ${r.expected_count} seals verified).`);
+          `&#x2705; Delivery recorded &mdash; <strong>${escapeHtml(r.match_status)}</strong> (${r.scanned_count} of ${r.expected_count} seals verified)${r.supplies_status ? `. Supplies: <strong>${escapeHtml(r.supplies_status)}</strong>` : ''}.`);
         done = true;
       } catch (err) {
         if (isNetworkError(err)) {
@@ -918,6 +1080,8 @@
     };
 
     function renderImportResult(r, committed) {
+      const dayText = Object.keys(r.days || {}).map(d => `Day ${d}: ${r.days[d]} stops`).join(', ');
+      const supplyText = Object.keys(r.supplyTotals || {}).map(k => `${k} ${r.supplyTotals[k]}`).join(' &middot; ');
       const li = (a) => a.length ? `<ul>${a.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>` : '';
       const warn = [].concat(
         r.unassigned.length ? ['Machines with no matching precinct: ' + r.unassigned.join(', ')] : [],
@@ -927,6 +1091,8 @@
         <div class="alert ${warn.length ? 'alert-warning' : 'alert-success'}" style="display:block;">
           <strong>${committed ? 'Published' : 'Preview'}:</strong> ${escapeHtml(r.election.name)} (${escapeHtml(r.election.date)}) &mdash;
           ${r.buildings} locations, ${r.seals} seals.
+          ${dayText ? `<br>${escapeHtml(dayText)}` : ''}
+          ${supplyText ? `<br><small>Supplies: ${supplyText}</small>` : ''}
           ${warn.length ? '<br><strong>Check these:</strong>' + li(warn) : ''}
         </div>`;
     }
@@ -935,12 +1101,12 @@
       const out = document.getElementById('importResult');
       const btnP = document.getElementById('btnImportPreview'), btnC = document.getElementById('btnImportPublish');
       try {
-        const [machineCsv, precinctCsv] = await Promise.all([readFileText('importMachine'), readFileText('importPrecinct')]);
-        if (!machineCsv || !precinctCsv) { out.innerHTML = '<div class="alert alert-danger" style="display:block;">Choose both export files first.</div>'; return; }
+        const [machineCsv, precinctCsv, scheduleCsv] = await Promise.all([readFileText('importMachine'), readFileText('importPrecinct'), readFileText('importSchedule')]);
+        if (!machineCsv || !precinctCsv || !scheduleCsv) { out.innerHTML = '<div class="alert alert-danger" style="display:block;">Choose all three export files first (machine data, precincts, delivery schedule).</div>'; return; }
         if (commit && !confirm('Publish this election? It replaces any previous import of the same election and becomes the active election.')) return;
         btnP.disabled = btnC.disabled = true;
         out.textContent = commit ? 'Publishing...' : 'Checking...';
-        const res = await callFn('importElection', { machineCsv, precinctCsv, commit }, { timeout: 120000 });
+        const res = await callFn('importElection', { machineCsv, precinctCsv, scheduleCsv, commit }, { timeout: 120000 });
         renderImportResult(res.data, commit);
         importPreviewOk = !commit;
         if (commit) { loadElections(); loadElectionList(); }
@@ -1018,13 +1184,23 @@
           <small>Deleted by ${escapeHtml(data.deleted_by)} ${escapeHtml(when)}<br>Reason: ${escapeHtml(data.delete_reason)}</small></td>`;
       }
 
+      let suppliesCell = '&mdash;';
+      if (Array.isArray(data.supplies)) {
+        const shortItems = data.supplies.filter(x => !x.delivered);
+        suppliesCell = data.supplies_status === 'SHORT'
+          ? `<span style="color: var(--warning-color); font-weight:700;">&#x26A0;&#xFE0F; SHORT</span>` + shortItems.map(x => `<div><small>${escapeHtml(x.label)} ${x.delivered_qty}/${x.expected}</small></div>`).join('')
+          : '<span style="color: var(--success-color); font-weight:700;">&#x2705; COMPLETE</span>';
+      }
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${escapeHtml(dateStr)}</td>
+        <td>${escapeHtml((data.route && data.route.label) || '')}</td>
         <td><strong>${escapeHtml(data.location_name)}</strong><br>${escapeHtml(precinctText)}${data.election_name ? `<br><small>${escapeHtml(data.election_name)}</small>` : ''}</td>
         <td>${scannedCell}</td>
         <td>${expectedCell}</td>
         <td>${statusCell}</td>
+        <td>${suppliesCell}</td>
         <td>${escapeHtml(data.driver_email)}</td>
         <td>${photoLink}</td>
         ${actionsCell}
@@ -1041,6 +1217,8 @@
         if (d.deleted) deleted.push(d);
         else (!activeIds.size || activeIds.has(d.election_id) ? active : archived).push(d);
       });
+      const routeIdx = (d) => (d.route && Number.isFinite(d.route.index)) ? d.route.index : 9999;
+      active.sort((a, b) => routeIdx(a) - routeIdx(b));   // stable: newest first within a stop
       return { active, archived, deleted };
     }
 
@@ -1057,7 +1235,7 @@
       active.forEach(d => tbody.appendChild(buildAuditRow(d, 'active')));
       archived.forEach(d => archBody.appendChild(buildAuditRow(d, 'archived')));
       deleted.forEach(d => delBody.appendChild(buildAuditRow(d, 'deleted', activeIds.has(d.election_id))));
-      if (!active.length) tbody.innerHTML = '<tr><td colspan="8">No delivery records for the active election.</td></tr>';
+      if (!active.length) tbody.innerHTML = '<tr><td colspan="10">No delivery records for the active election.</td></tr>';
       document.getElementById('archivedAuditSummary').textContent = `Other / past elections (${archived.length})`;
       document.getElementById('archivedAudit').style.display = archived.length ? '' : 'none';
       document.getElementById('deletedAuditSummary').textContent = `Deleted records (${deleted.length})`;
@@ -1112,6 +1290,14 @@
       document.getElementById('editNotes').value = d.notes || '';
       document.getElementById('editStatus').value = d.status_overridden ? d.match_status : 'auto';
       document.getElementById('editReason').value = '';
+      const hasSupplies = !legacy && Array.isArray(d.supplies) && d.supplies.length > 0;
+      document.getElementById('editSuppliesBox').style.display = hasSupplies ? '' : 'none';
+      document.getElementById('editSupplies').innerHTML = hasSupplies ? d.supplies.map(x => `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 0;">
+          <span>${escapeHtml(x.label)} &mdash; ${x.expected}</span>
+          <span><label><input type="checkbox" data-edit-supply="${escapeHtml(x.key)}" ${x.delivered ? 'checked' : ''}> Delivered</label>
+          Qty <input type="number" min="0" max="${x.expected}" value="${x.delivered_qty}" data-edit-supply-qty="${escapeHtml(x.key)}" style="width:64px;"></span>
+        </div>`).join('') : '';
       ['editLocation', 'editScans', 'editStatus'].forEach(i => { document.getElementById(i).disabled = legacy; });
       document.getElementById('editLegacyNote').style.display = legacy ? 'block' : 'none';
       document.getElementById('editSummary').innerHTML =
@@ -1135,6 +1321,21 @@
         if (loc && loc !== d.location_key) patch.locationKey = loc;
         const codes = document.getElementById('editScans').value.split('\n').map(c => c.trim()).filter(Boolean);
         if (!sameCodeSet(codes, scanCodesOf(d))) patch.scans = codes;
+        if (Array.isArray(d.supplies) && d.supplies.length) {
+          const next = d.supplies.map(x => {
+            const cb = document.querySelector(`input[data-edit-supply="${CSS.escape(x.key)}"]`);
+            const q = document.querySelector(`input[data-edit-supply-qty="${CSS.escape(x.key)}"]`);
+            const delivered = cb ? cb.checked : x.delivered;
+            return delivered ? { key: x.key, delivered: true } : { key: x.key, delivered: false, qty: Math.max(0, Math.min(x.expected, Math.floor(Number(q && q.value) || 0))) };
+          });
+          const changed = d.supplies.some((x, i) => {
+            const n = next[i];
+            const nowDelivered = n.delivered || n.qty >= x.expected;
+            const nowQty = n.delivered ? x.expected : n.qty;
+            return nowDelivered !== x.delivered || nowQty !== x.delivered_qty;
+          });
+          if (changed) patch.supplies = next;
+        }
         const st = document.getElementById('editStatus').value;
         const initial = d.status_overridden ? d.match_status : 'auto';
         if (st !== initial) patch.statusOverride = st === 'auto' ? null : st;
@@ -1198,7 +1399,7 @@
 
     function loadAuditLog() {
       const tbody = document.getElementById('auditTableBody');
-      tbody.innerHTML = '<tr><td colspan="8">Loading custody records...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10">Loading custody records...</td></tr>';
 
       firebase.firestore().collection('deliveries')
         .orderBy('timestamp', 'desc')
@@ -1206,7 +1407,7 @@
           auditDocs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
           renderAudit();
         }, err => {
-          tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger-color);">Error loading records: ${escapeHtml(err.message)}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="10" style="color: var(--danger-color);">Error loading records: ${escapeHtml(err.message)}</td></tr>`;
         });
     }
 
@@ -1218,12 +1419,13 @@
         return;
       }
 
-      let csvContent = 'Timestamp,Election,Precinct,Location,Scanned Seal,Expected Seal,Expected Count,Scanned Count,Missing Seals,Unexpected Seals,Status,Computed Status,Status Overridden,Edit Count,Driver,Notes,Photo URL\n';
+      let csvContent = 'Timestamp,Route,Election,Precinct,Location,Scanned Seal,Expected Seal,Expected Count,Scanned Count,Missing Seals,Unexpected Seals,Status,Computed Status,Status Overridden,Edit Count,Supplies Status,Supplies Short,Driver,Notes,Photo URL\n';
 
       rows.forEach(d => {
         const dateStr = d.timestamp ? new Date(d.timestamp.seconds * 1000).toISOString() : '';
         const row = [
           dateStr,
+          (d.route && d.route.label) || '',
           d.election_name || '',
           Array.isArray(d.precincts) ? d.precincts.map(p => `${p.name} (${p.num})`).join('; ') : (d.precinct || ''),
           d.location_name || '',
@@ -1237,6 +1439,8 @@
           d.computed_status || d.match_status || '',
           d.status_overridden ? 'yes' : '',
           d.edit_count || 0,
+          d.supplies_status || '',
+          Array.isArray(d.supplies) ? d.supplies.filter(x => !x.delivered).map(x => `${x.label} ${x.delivered_qty}/${x.expected}`).join('; ') : '',
           d.driver_email || '',
           d.notes || '',
           d.photo_url || ''

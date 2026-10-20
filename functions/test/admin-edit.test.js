@@ -5,7 +5,7 @@ const m = require('../src/manifest');
 const d = require('../src/delivery');
 const { PRECINCT_CSV, MACHINE_CSV } = require('./fixtures');
 
-const manifest = m.buildManifest(m.csvToObjects(MACHINE_CSV), m.parsePrecinctsCSV(PRECINCT_CSV));
+const manifest = m.buildManifest(m.csvToObjects(MACHINE_CSV), m.parsePrecinctsCSV(PRECINCT_CSV), []);
 const loc = (name) => d.splitLocation(manifest.find(b => b.location_name === name));
 const two = loc('Hall Two');   // ZZ1003, ZZ1004
 const one = loc('Hall One');   // ZZ1001, ZZ1002

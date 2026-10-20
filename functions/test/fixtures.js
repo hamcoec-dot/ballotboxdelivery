@@ -16,9 +16,9 @@ const PRECINCT_CSV = [
   prow(5, 'EMPTY', 'HALL FOUR', '4 TEST ST, TESTVILLE TN 37000', 'PO BOX 4, TESTVILLE TN 37001')
 ].join('\r\n') + '\r\n';
 
-const MACHINE_HEADER = 'Account,CPN,Precinct,Machine,Serial Number,Ballot box lid SN,DOE,ElectionName';
-const mrow = (cpn, precinct, machine, serial, lid, doe = '3/9/2027', name = 'Test General Election') =>
-  `ACC,${cpn},${precinct},${machine},${serial},${lid},${doe},${name}`;
+const MACHINE_HEADER = 'Account,CPN,Precinct,Machine,Serial Number,Ballot box lid SN,DOE,ElectionName,Polling Place';
+const mrow = (cpn, precinct, machine, serial, lid, doe = '3/9/2027', name = 'Test General Election', pp = precinct) =>
+  `ACC,${cpn},${precinct},${machine},${serial},${lid},${doe},${name},${pp}`;
 
 const MACHINE_CSV = '﻿' + [
   MACHINE_HEADER,
