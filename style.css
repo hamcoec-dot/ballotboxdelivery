@@ -411,6 +411,7 @@ body.admin-wide .container { max-width: 1680px !important; padding: 20px 24px !i
 .adm-chip { min-height: 40px; padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 20px; background: var(--card-bg); font: inherit; font-size: 14px; font-weight: 600; color: var(--text-color); cursor: pointer; }
 .adm-chip[aria-pressed="true"] { background: var(--primary-color); border-color: var(--primary-color); color: #ffffff; }
 .adm-check { display: inline-flex !important; align-items: center; gap: 6px; margin: 0 !important; font-size: 14px; }
+.adm-check[hidden] { display: none !important; }
 
 .adm-scroll { max-height: calc(100vh - 260px); min-height: 200px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px; }
 .adm-table th, .adm-table td { padding: 8px 12px !important; font-size: 14px; vertical-align: top; }
