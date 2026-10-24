@@ -1,8 +1,8 @@
 # Hamilton County Election Commission — Ballot Box Chain of Custody Mobile Web App
 
-A mobile-first web application designed for Hamilton County Election Commission (HCEC) to log ballot box delivery chains of custody, verify voting machine seal barcodes against an expected manifest CSV, photograph deliveries, and log GPS location timestamps.
+A web application designed for Hamilton County Election Commission (HCEC) to log ballot box delivery chains of custody, verify voting machine seal barcodes against an expected manifest CSV, photograph deliveries, and log GPS location timestamps. The driver side is mobile-first (drivers use phones in the field); the admin side (audit log, import, edit history, export) is used from desktop PCs.
 
-Hosted entirely as a static single-page application on **GitHub Pages**, backed by **Firebase (Spark free tier)** for authentication, Firestore database, and photo storage.
+Hosted entirely as a static single-page application on **GitHub Pages**, backed by **Firebase (Blaze pay-as-you-go plan)** for authentication, Firestore database, photo storage, and Cloud Functions. Blaze is required because the app uses Cloud Functions.
 
 ---
 
