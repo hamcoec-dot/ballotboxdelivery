@@ -78,7 +78,7 @@
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
           <h2 class="card-title" style="margin-bottom: 0 !important;">Select Polling Place</h2>
-          <button type="button" class="btn btn-small btn-secondary" onclick="showView('viewElections')" aria-label="Back to election selection">
+          <button type="button" id="backToElectionsBtn" class="btn btn-small btn-secondary" onclick="showView('viewElections')" aria-label="Back to election selection">
             &larr; Back to Elections
           </button>
         </div>
@@ -356,7 +356,15 @@
         }
       });
 
-      Object.values(elections).forEach(elec => {
+      // Only one active election: skip the picker and go straight to its stops.
+      const list = Object.values(elections);
+      document.getElementById('backToElectionsBtn').style.display = list.length === 1 ? 'none' : '';
+      if (list.length === 1 && document.getElementById('viewElections').classList.contains('active')) {
+        selectElection(list[0]);
+        return;
+      }
+
+      list.forEach(elec => {
         const card = document.createElement('div');
         card.className = 'flex-card';
         card.onclick = () => selectElection(elec);
