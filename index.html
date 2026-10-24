@@ -1100,6 +1100,11 @@
             await idbDelete(it.clientId);
           } catch (err) {
             if (isNetworkError(err)) break;
+            if (err && err.details && err.details.discard) {   // practice delivery from before "Clear test data"
+              console.warn('Queued practice delivery dropped:', err.message);
+              await idbDelete(it.clientId);
+              continue;
+            }
             console.error('Queued delivery rejected:', err);
             it.failed = err.message;
             await idbPut(it);

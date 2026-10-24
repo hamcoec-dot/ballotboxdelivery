@@ -193,6 +193,19 @@ input:focus, textarea:focus, select:focus {
   background-color: rgba(30, 58, 138, 0.05) !important;
 }
 
+.btn-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.btn-danger:hover, .btn-danger:focus {
+  background-color: #7f1d1d !important;
+}
+
+.btn-danger:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+}
+
 .btn-small {
   width: auto !important;
   min-height: 44px !important;

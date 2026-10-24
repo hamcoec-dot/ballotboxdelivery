@@ -121,6 +121,17 @@ In the detail panel, each record for the **active election** has **Edit** and **
 - Records from past elections and older single-seal records are read-only except notes and delete/restore (legacy records) or not at all (past elections).
 - Two admins editing the same record: the second save is rejected ("changed by someone else"), reload and retry.
 
+### Clearing test data before an election (Admin)
+
+Practise with the real election files, then clear the practice run before real deliveries start. In the admin page open **Clear Test Data**, pick the election, click **Check what will be removed**, enter a reason and type the election ID shown (for example `2026-11`), then click **Clear test data**.
+
+- **Removed for that election only:** delivery records (with their change history), seal checks, driver lockout counters and delivery photos.
+- **Kept:** the imported stop list and expected seals (drivers can start real deliveries straight away, no re-import needed), other elections, admins, logins, functions and rules.
+- **Backup first:** everything removed is copied to Firebase Storage under `backups/test-data/{election}/{time}/` (`records.json` plus the photos). No app user can read that folder; restoring needs a developer.
+- **Not allowed on or after election day** (Eastern time), so real records cannot be cleared.
+- **Phones:** a practice delivery still waiting in a phone's offline queue is turned away when it syncs (its scans are older than the clear) and kept in `test_data_clears/{election}/late` instead of the records. The phone drops it from its queue.
+- Every clear is logged in `test_data_clears/{election}/runs` (who, when, why, counts) and listed under **Earlier clears**.
+
 ---
 
 ## ☁️ Cloud Functions
