@@ -19,6 +19,7 @@
 
   <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
+  <script src="loadout.js" defer></script>
 </head>
 <body>
 
@@ -88,6 +89,10 @@
         </div>
 
         <div id="dayChips" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;"></div>
+
+        <button type="button" class="btn btn-outline" style="margin-bottom: 16px;" onclick="openLoadout()" aria-label="Open the truck loadout list for a delivery day">
+          <span aria-hidden="true">&#x1F69A;</span> Truck Loadout List
+        </button>
 
         <div id="pollingPlacesList">
           <!-- Dynamically populated -->
@@ -192,6 +197,9 @@
         </button>
       </div>
     </section>
+
+    <!-- VIEW 4b: TRUCK LOADOUT LIST (rendered by loadout.js) -->
+    <section id="viewLoadout" class="view-section"></section>
 
     <!-- VIEW 5: ADMIN DELIVERY MONITORING (rendered by admin.js, loaded only for admins) -->
     <section id="viewAdmin" class="view-section"></section>
@@ -1216,7 +1224,8 @@
         submitBtn.innerHTML = '<span aria-hidden="true">&#x1F4BE;</span> Record Custody Delivery';
       }
       if (done) {
-        setTimeout(() => { alertDiv.style.display = 'none'; showView('viewPollingPlaces'); }, 2500);
+        const nextView = typeof loadoutAfterDelivery === 'function' ? loadoutAfterDelivery(selectedPollingPlace.location_key) : 'viewPollingPlaces';
+        setTimeout(() => { alertDiv.style.display = 'none'; showView(nextView); }, 2500);
       }
     }
 

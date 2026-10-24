@@ -477,3 +477,36 @@ body.admin-wide .container { max-width: 1680px !important; padding: 20px 24px !i
   .adm-kpi, .adm-day { break-inside: avoid; }
   .adm-drawer, .adm-dialog { display: none !important; }
 }
+
+/* ---------------------------------------------------------------- Truck loadout list (driver, mobile first) */
+.lo-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.lo-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.lo-progress { margin-bottom: 12px; }
+.lo-truck { background: #eff6ff; border: 2px solid var(--primary-color); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.lo-truck .btn-outline { background: #fff !important; }
+.lo-bulk { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.lo-lines { list-style: none; margin: 0 0 8px; padding: 0; }
+.lo-lines li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border-color); font-size: 17px; }
+.lo-lines li:last-child { border-bottom: none; }
+.lo-lines strong { font-size: 19px; white-space: nowrap; }
+.lo-list { display: flex; flex-direction: column; gap: 12px; }
+.lo-stop { background: #fff; border: 1px solid var(--border-color); border-left: 6px solid var(--border-color); border-radius: 8px; padding: 14px; }
+.lo-stop.loaded { border-color: var(--primary-color); border-left-color: var(--primary-color); background: #f8faff; }
+.lo-stop.delivered { border-left-color: var(--success-color); background: #f6fdf8; }
+.lo-stop.delivered .stop-name, .lo-stop.delivered .lo-lines { color: var(--text-muted); }
+.lo-addr { margin-bottom: 8px; }
+.lo-warn { color: var(--warning-color); margin-bottom: 8px; }
+.lo-check { display: flex !important; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; margin: 8px 0 !important; border: 2px solid var(--border-color); border-radius: 10px; font-size: 17px; font-weight: 600; cursor: pointer; background: var(--card-bg); }
+.lo-stop.loaded .lo-check { border-color: var(--primary-color); background: #dbeafe; }
+.lo-check input[type="checkbox"] { width: 30px; height: 30px; flex: none; accent-color: var(--primary-color); cursor: pointer; }
+.lo-toggle { margin: 0 !important; }
+.lo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lo-actions .btn-small { flex: 1 1 160px; justify-content: center; }
+.lo-done-line { font-weight: 700; color: var(--success-color); margin-bottom: 8px; }
+.lo-remaining { margin-top: 16px; }
+.lo-remaining .lo-lines { margin-top: 8px; }
+.lo-day { margin: 8px 0 0; }
+.lo-lines li.lo-machines { display: block; padding: 0 0 6px; font-size: 15px; color: var(--text-muted); }
+.lo-machines ul { margin: 0; padding-left: 20px; }
+.lo-machines li { padding: 2px 0; }
+.lo-truck .lo-actions .btn-small { margin-top: 8px; }
