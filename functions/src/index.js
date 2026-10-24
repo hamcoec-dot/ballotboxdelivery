@@ -5,12 +5,14 @@ const { setGlobalOptions } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { csvToObjects, parsePrecinctsCSV, parseScheduleCSV, buildManifest, normSeal, deriveSealFormat } = require('./manifest');
 const { splitLocation, matchSlot, computeDelivery, computeSupplies, reconstructScans, mergeScans, applyAdminEdit, UUID_RE } = require('./delivery');
+const { clearBlockedReason, recordedBeforeClear } = require('./cleanup');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'us-east1', maxInstances: 10 });
 
 const db = admin.firestore();
 const MAX_FAILED_CHECKS = 15;
+const STORAGE_BUCKET = 'ballotboxdelivery.firebasestorage.app';   // same as storageBucket in firebase-config.js
 
 function requireAuth(req) {
   if (!req.auth) throw new HttpsError('unauthenticated', 'Sign in required.');
@@ -202,10 +204,23 @@ exports.submitDelivery = onCall(async (req) => {
   }
 
   const eref = db.doc(`elections/${electionId}`);
-  const [elec, pubSnap, expSnap] = await Promise.all([
-    eref.get(), eref.collection('locations').doc(locationKey).get(), eref.collection('expected').doc(locationKey).get()
+  const [elec, pubSnap, expSnap, clearSnap] = await Promise.all([
+    eref.get(), eref.collection('locations').doc(locationKey).get(), eref.collection('expected').doc(locationKey).get(),
+    db.doc(`test_data_clears/${electionId}`).get()
   ]);
   if (!elec.exists || !pubSnap.exists || !expSnap.exists) throw new HttpsError('not-found', 'Unknown election or location.');
+
+  // A practice delivery that sat in a phone's offline queue past "Clear test data": keep a copy for
+  // the office instead of recording it, and tell the phone to drop it from its queue.
+  const clearedAt = clearSnap.exists && clearSnap.data().cleared_at;
+  if (clearedAt && recordedBeforeClear(scans, clearedAt.toMillis())) {
+    await clearSnap.ref.collection('late').doc(clientId).set({
+      client_id: clientId, location_key: locationKey, scans, supplies: submittedSupplies.map(({ key, delivered, qty }) => (qty === undefined ? { key, delivered } : { key, delivered, qty })), notes, photo_path: photoPath, gps,
+      driver_uid: auth.uid, driver_email: auth.token.email || 'unknown', received_at: FieldValue.serverTimestamp()
+    });
+    throw new HttpsError('failed-precondition',
+      'This delivery was saved on this device before the practice data was cleared, so it was not recorded.', { discard: true });
+  }
   const pub = pubSnap.data();
 
   const probe = computeDelivery(pub.slots, expSnap.data().slots, scans);
@@ -370,4 +385,73 @@ exports.adminSetDeliveryDeleted = onCall(async (req) => {
     });
   });
   return { deleted: d.deleted, edit_count: baseEditCount + 1 };
+});
+
+// ---------------------------------------------------------------- clearTestData
+// Removes one election's practice run: deliveries (with their history), seal checks, driver lockouts and
+// delivery photos. The imported stop list and expected seals stay, so real deliveries can start at once.
+// Everything removed is first copied to Storage under backups/test-data/ (not readable by any client).
+// Refused from election day on. Without commit it only counts what would be removed.
+exports.clearTestData = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (req) => {
+  const auth = await requireAdmin(req);
+  const d = req.data || {};
+  const electionId = str(d.electionId, 40, 'electionId');
+  const elecSnap = await db.doc(`elections/${electionId}`).get();
+  if (!elecSnap.exists) throw new HttpsError('not-found', 'Unknown election.');
+  const elec = elecSnap.data();
+  const blocked = clearBlockedReason(elec.date, new Date());
+  if (blocked) throw new HttpsError('failed-precondition', blocked);
+
+  const byElection = (name) => db.collection(name).where('election_id', '==', electionId).get();
+  const [dSnap, cSnap, rSnap] = await Promise.all([byElection('deliveries'), byElection('seal_checks'), byElection('rate_limits')]);
+  const photoPaths = [...new Set(dSnap.docs.map(x => x.data().photo_path).filter(p => typeof p === 'string' && p.startsWith('photos/')))];
+  const counts = { deliveries: dSnap.size, seal_checks: cSnap.size, lockouts: rSnap.size, photos: photoPaths.length };
+  const election = { id: electionId, name: elec.name, date: elec.date };
+  if (d.commit !== true) return { committed: false, election, counts };
+
+  if (d.confirm !== electionId) throw new HttpsError('invalid-argument', `Type ${electionId} exactly to confirm.`);
+  const reason = str(d.reason, 300, 'reason').trim();
+  if (reason.length < 3) throw new HttpsError('invalid-argument', 'A reason (3+ characters) is required.');
+  const email = auth.token.email || auth.uid;
+
+  // 1. Back up the records (with every delivery's revision history) as one JSON file.
+  const bucket = admin.storage().bucket(STORAGE_BUCKET);
+  const backupPath = `backups/test-data/${electionId}/${new Date().toISOString().replace(/[:.]/g, '-')}`;
+  const revSnaps = await Promise.all(dSnap.docs.map(x => x.ref.collection('revisions').get()));
+  const asJson = (snap) => snap.docs.map(x => ({ id: x.id, data: x.data() }));
+  const backup = {
+    election, cleared_by: email, reason, made_at: new Date().toISOString(), counts,
+    deliveries: dSnap.docs.map((x, i) => ({ id: x.id, data: x.data(), revisions: asJson(revSnaps[i]) })),
+    seal_checks: asJson(cSnap), rate_limits: asJson(rSnap)
+  };
+  await bucket.file(`${backupPath}/records.json`).save(JSON.stringify(backup, null, 1), { contentType: 'application/json', resumable: false });
+
+  // 2. Move the photos into the backup folder. A photo that is already gone is only counted.
+  let photosMissing = 0;
+  for (let i = 0; i < photoPaths.length; i += 20) {
+    await Promise.all(photoPaths.slice(i, i + 20).map(p => bucket.file(p).move(`${backupPath}/${p}`).catch(e => {
+      if (e.code === 404) { photosMissing++; return; }
+      throw e;
+    })));
+  }
+
+  // 3. From now on, practice deliveries still queued on phones are turned away (see submitDelivery).
+  const logRef = db.doc(`test_data_clears/${electionId}`);
+  await logRef.set({ cleared_at: FieldValue.serverTimestamp(), cleared_by: email }, { merge: true });
+
+  // 4. Delete the records.
+  const writer = db.bulkWriter();
+  let failedDeletes = 0;
+  const del = (ref) => writer.delete(ref).catch(() => { failedDeletes++; });
+  revSnaps.forEach(s => s.docs.forEach(x => del(x.ref)));
+  [dSnap, cSnap, rSnap].forEach(s => s.docs.forEach(x => del(x.ref)));
+  await writer.close();
+
+  // 5. Audit record of who did it.
+  await logRef.collection('runs').add({
+    at: FieldValue.serverTimestamp(), by: email, reason, election_name: elec.name || '', counts,
+    photos_missing: photosMissing, failed_deletes: failedDeletes, backup_path: backupPath
+  });
+  if (failedDeletes) throw new HttpsError('internal', `${failedDeletes} records could not be removed. Run Clear test data again.`);
+  return { committed: true, election, counts, photosMissing, backupPath };
 });

@@ -48,6 +48,21 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // "Clear test data" log per election (written by clearTestData). `late` holds practice deliveries
+    // that reached the server from a phone's offline queue after the clear and were not recorded.
+    match /test_data_clears/{eid} {
+      allow read: if isAdmin();
+      allow write: if false;
+      match /runs/{id} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+      match /late/{id} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
     // Failed-attempt counters (functions only). Admins may delete one to reset a driver.
     match /rate_limits/{id} {
       allow read: if isAdmin();

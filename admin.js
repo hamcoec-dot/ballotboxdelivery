@@ -139,6 +139,32 @@ function loadAdminShell() {
       </details>
     </div>
 
+    <div class="card no-print">
+      <details id="clearCard">
+        <summary onclick="loadClearCard()">Clear Test Data</summary>
+        <p class="adm-note" style="margin: 8px 0 12px;">Use this after a practice run, before real deliveries start. It removes every delivery record, seal check, driver lockout and delivery photo for the election you choose. The imported stop list and seal numbers stay, so drivers can start real deliveries straight away. A backup copy is saved first. It cannot be used on or after election day.</p>
+        <div class="form-group">
+          <label for="clearElection">Election</label>
+          <select id="clearElection" onchange="resetClearCard(); loadClearHistory();"><option value="">Loading...</option></select>
+        </div>
+        <button type="button" id="btnClearCheck" class="btn btn-small btn-secondary" onclick="runClearTestData(false)">Check what will be removed</button>
+        <div id="clearResult" aria-live="polite" style="margin-top: 12px;"></div>
+        <div id="clearConfirmBox" hidden>
+          <div class="form-group">
+            <label for="clearReason">Reason (kept in the log)</label>
+            <input type="text" id="clearReason" maxlength="300" placeholder="Practice run finished" oninput="updateClearButton()">
+          </div>
+          <div class="form-group">
+            <label for="clearConfirm">To confirm, type the election ID <strong id="clearConfirmId"></strong></label>
+            <input type="text" id="clearConfirm" maxlength="40" autocomplete="off" spellcheck="false" oninput="updateClearButton()">
+          </div>
+          <button type="button" id="btnClearRun" class="btn btn-small btn-danger" onclick="runClearTestData(true)" disabled>Clear test data</button>
+        </div>
+        <h3 style="margin: 12px 0 4px; font-size: 16px;">Earlier clears</h3>
+        <div id="clearHistory" style="font-size: 14px;">Choose an election.</div>
+      </details>
+    </div>
+
     <dialog id="admDrawer" class="adm-drawer" aria-labelledby="admDrawerTitle">
       <div class="adm-drawer-head">
         <h2 id="admDrawerTitle">Details</h2>
@@ -1019,6 +1045,110 @@ async function loadElectionList() {
       .map(e => `<div>${e.active ? '&#x2705; <strong>Active</strong>' : '&#x23F8;&#xFE0F; Inactive'} &mdash; ${escapeHtml(e.name)} (${escapeHtml(e.date)}), ${e.location_count || '?'} locations, ${e.seal_count || '?'} seals</div>`).join('');
   } catch (err) {
     el.textContent = 'Could not load elections: ' + err.message;
+  }
+}
+
+// ---------------------------------------------------------------- clear test data
+let clearChecked = null;   // { election, counts } from the last check of the selected election
+
+async function loadClearCard() {
+  const sel = document.getElementById('clearElection');
+  const keep = sel.value;
+  try {
+    const snap = await firebase.firestore().collection('elections').get();
+    const list = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+      .sort((a, b) => (b.active === true) - (a.active === true) || String(b.date).localeCompare(String(a.date)));
+    sel.innerHTML = list.length
+      ? list.map(e => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.name)} (${escapeHtml(e.date)})${e.active ? ' &mdash; active' : ''}</option>`).join('')
+      : '<option value="">No elections imported yet</option>';
+    if (keep && list.some(e => e.id === keep)) sel.value = keep;
+  } catch (err) {
+    sel.innerHTML = '<option value="">Could not load elections</option>';
+  }
+  resetClearCard();
+  loadClearHistory();
+}
+
+function resetClearCard() {
+  clearChecked = null;
+  document.getElementById('clearResult').innerHTML = '';
+  document.getElementById('clearConfirmBox').hidden = true;
+  document.getElementById('clearReason').value = '';
+  document.getElementById('clearConfirm').value = '';
+  updateClearButton();
+}
+
+function updateClearButton() {
+  const ok = !!clearChecked
+    && document.getElementById('clearConfirm').value.trim() === clearChecked.election.id
+    && document.getElementById('clearReason').value.trim().length >= 3;
+  document.getElementById('btnClearRun').disabled = !ok;
+}
+
+const clearCountText = (c) => [
+  `${c.deliveries} delivery record${c.deliveries === 1 ? '' : 's'}`,
+  `${c.seal_checks} seal check${c.seal_checks === 1 ? '' : 's'}`,
+  `${c.lockouts} driver lockout counter${c.lockouts === 1 ? '' : 's'}`,
+  `${c.photos} photo${c.photos === 1 ? '' : 's'}`
+].join(', ');
+
+async function runClearTestData(commit) {
+  const electionId = document.getElementById('clearElection').value;
+  const out = document.getElementById('clearResult');
+  const btnCheck = document.getElementById('btnClearCheck'), btnRun = document.getElementById('btnClearRun');
+  if (!electionId) { out.innerHTML = '<div class="alert alert-danger" style="display:block;">Choose an election first.</div>'; return; }
+  const data = { electionId, commit };
+  if (commit) {
+    if (!clearChecked || clearChecked.election.id !== electionId) return;
+    data.confirm = document.getElementById('clearConfirm').value.trim();
+    data.reason = document.getElementById('clearReason').value.trim();
+    if (!confirm(`Clear the test data for ${clearChecked.election.name}? This removes ${clearCountText(clearChecked.counts)}. A backup copy is kept, but only a technical restore can bring them back.`)) return;
+  }
+  btnCheck.disabled = btnRun.disabled = true;
+  out.textContent = commit ? 'Saving a backup and clearing. This can take a few minutes; keep this page open...' : 'Checking...';
+  try {
+    const r = (await callFn('clearTestData', data, { timeout: 540000 })).data;
+    if (!commit) {
+      clearChecked = r;
+      const empty = !r.counts.deliveries && !r.counts.seal_checks && !r.counts.lockouts && !r.counts.photos;
+      out.innerHTML = `<div class="alert alert-warning" style="display:block;">
+        <strong>${escapeHtml(r.election.name)} (${escapeHtml(r.election.date)}):</strong> ${empty ? 'there is no test data to clear.' : `this will remove ${escapeHtml(clearCountText(r.counts))}.`}
+        <br><small>Make sure every practice delivery is finished and no driver is out making real deliveries.</small></div>`;
+      document.getElementById('clearConfirmId').textContent = r.election.id;
+      document.getElementById('clearConfirmBox').hidden = empty;
+    } else {
+      out.innerHTML = `<div class="alert alert-success" style="display:block;">
+        <strong>Cleared:</strong> ${escapeHtml(clearCountText(r.counts))}.${r.photosMissing ? ` (${r.photosMissing} photo${r.photosMissing === 1 ? ' was' : 's were'} already gone.)` : ''}
+        <br>The stop list and seal numbers were kept, so drivers can start real deliveries now. Practice deliveries still waiting on a phone will be turned away and set aside.
+        <br><small>Backup: ${escapeHtml(r.backupPath)} in Firebase Storage.</small></div>`;
+      clearChecked = null;
+      document.getElementById('clearConfirmBox').hidden = true;
+      sealChecks = null; pastDocs = null;
+      renderAdminAll();
+      loadClearHistory();
+    }
+  } catch (err) {
+    out.innerHTML = `<div class="alert alert-danger" style="display:block;">${commit ? 'Clear failed' : 'Check failed'}: ${escapeHtml(err.message)}</div>`;
+  } finally {
+    btnCheck.disabled = false;
+    updateClearButton();
+  }
+}
+
+async function loadClearHistory() {
+  const el = document.getElementById('clearHistory');
+  const electionId = document.getElementById('clearElection').value;
+  if (!electionId) { el.textContent = 'Choose an election.'; return; }
+  el.textContent = 'Loading...';
+  try {
+    const ref = firebase.firestore().collection('test_data_clears').doc(electionId);
+    const [runs, late] = await Promise.all([ref.collection('runs').orderBy('at', 'desc').limit(10).get(), ref.collection('late').get()]);
+    if (document.getElementById('clearElection').value !== electionId) return;
+    const rows = runs.docs.map(d => d.data()).map(x => `<div>${escapeHtml(fmtTime(x.at))} by ${escapeHtml(x.by)}: ${escapeHtml(x.reason)} <span class="adm-note">(${escapeHtml(clearCountText(x.counts || {}))})</span></div>`);
+    if (late.size) rows.push(`<div class="alert alert-warning" style="display:block; margin-top: 8px;">${late.size} practice deliver${late.size === 1 ? 'y' : 'ies'} reached the server from a phone after a clear and ${late.size === 1 ? 'was' : 'were'} set aside, not recorded.</div>`);
+    el.innerHTML = rows.length ? rows.join('') : 'This election has not been cleared.';
+  } catch (err) {
+    el.textContent = 'Could not load the log: ' + err.message;
   }
 }
 
