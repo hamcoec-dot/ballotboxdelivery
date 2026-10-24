@@ -1,14 +1,16 @@
-const CACHE_NAME = 'hcec-delivery-v9';
+const CACHE_NAME = 'hcec-delivery-v10';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './firebase-config.js',
+  './loadout.js',
   './manifest.json',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js',
   './vendor/barcode-detector/ponyfill.iife.js',
   './vendor/barcode-detector/zxing_reader.wasm'
 ];

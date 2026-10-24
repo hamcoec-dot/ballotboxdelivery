@@ -13,6 +13,7 @@ Hosted entirely as a static single-page application on **GitHub Pages**, backed 
 - **Delivery Photograph Capture:** Integrates with native camera to capture and upload proof-of-delivery photos.
 - **GPS Timestamp Logging:** Automatically captures precise geolocation coordinates upon delivery submit.
 - **Offline Mode & Persistence:** Operates seamlessly offline via Service Worker caching and Firestore offline persistence.
+- **Truck Loadout List:** per-day (or hand-picked) list of every stop's ballot boxes, machines and supplies, with trip totals, so drivers load without opening each stop.
 - **Admin Delivery Monitoring Dashboard (desktop):** Live progress by day, stops not yet delivered, seal and supply problems, duplicate submissions, driver activity, the seal-check trail and driver lockouts, with search, filters, a detail panel (photo, GPS, notes, change history) and filter-aware CSV export.
 - **HTML Design Playbook Compliant:** Built to strict HCEC rules (WCAG 2.1 AA, fluid flexbox, no `<form>` tags, ASCII entities, high contrast).
 
@@ -100,6 +101,13 @@ How it works:
 - Offline: scans show as pending and submissions queue on the device, then verify and sync when back online.
 
 Do not commit export files (`*.csv` is git-ignored).
+
+### Truck Loadout List (Drivers)
+
+From the stop list, **Truck Loadout List** shows every stop with what goes on the truck for it: ballot boxes and the machines (precinct, machine number, serial) plus each supply quantity from the delivery schedule. Filter by **All days** or a day, tick **On truck** for the stops in this trip (from any day, or **Add next 5 stops** in route order), and the trip totals add up what to load. **On truck** shows only the picked stops. **Start Delivery** opens the normal delivery screen and comes back to the list after recording.
+
+- Picks and delivered marks are kept on the phone only (works offline). A stop is marked delivered when a delivery is recorded or queued on that phone, or by **Mark delivered** (which records nothing).
+- Drivers cannot read delivery records, so stops another driver delivered do not show as delivered.
 
 ### Delivery Monitoring dashboard (Admin)
 
