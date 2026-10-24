@@ -13,7 +13,7 @@ Hosted entirely as a static single-page application on **GitHub Pages**, backed 
 - **Delivery Photograph Capture:** Integrates with native camera to capture and upload proof-of-delivery photos.
 - **GPS Timestamp Logging:** Automatically captures precise geolocation coordinates upon delivery submit.
 - **Offline Mode & Persistence:** Operates seamlessly offline via Service Worker caching and Firestore offline persistence.
-- **Audit Log & CSV Export:** Admin view to inspect historical deliveries, filter mismatch alerts, and download CSV reports.
+- **Admin Delivery Monitoring Dashboard (desktop):** Live progress by day, stops not yet delivered, seal and supply problems, duplicate submissions, driver activity, the seal-check trail and driver lockouts, with search, filters, a detail panel (photo, GPS, notes, change history) and filter-aware CSV export.
 - **HTML Design Playbook Compliant:** Built to strict HCEC rules (WCAG 2.1 AA, fluid flexbox, no `<form>` tags, ASCII entities, high contrast).
 
 ---
@@ -95,17 +95,28 @@ How it works:
 - **Contacts are readable by any signed-in user**, including notes such as door codes. That is the same audience as the printed schedule.
 - The `precincts` export has unquoted commas in its address fields; it is parsed positionally, so do not hand-edit it.
 - Only the columns needed are stored. The expected seal numbers live in `elections/{id}/expected/*`, which no client can read.
-- Drivers' scans are checked by the `verifySeal` Cloud Function (match or no match only; 15 wrong attempts per location locks that driver out until an admin deletes their `rate_limits` doc).
+- Drivers' scans are checked by the `verifySeal` Cloud Function (match or no match only; 15 wrong attempts per location locks that driver out until an admin resets it from the dashboard's lockout banner or the Seal checks tab).
 - `submitDelivery` computes the status: `MATCH` (all seals verified), `INCOMPLETE` (some missing), `MISMATCH` (unexpected seal scanned).
 - Offline: scans show as pending and submissions queue on the device, then verify and sync when back online.
 
 Do not commit export files (`*.csv` is git-ignored).
 
+### Delivery Monitoring dashboard (Admin)
+
+Admins land on the dashboard after signing in. It is built for a desktop browser (full width, sticky table headers); drivers never download it (`admin.js` loads only after the admin check).
+
+- **Tiles and Progress by day:** stops delivered out of the schedule, stops not delivered yet, seal problems (`MISMATCH`/`INCOMPLETE`), supplies `SHORT`, stops submitted more than once, and admin-edited records. A stop's status is its newest non-deleted record. Click a tile or a day to filter the table.
+- **Tabs:** *Stops* (one row per scheduled stop, including ones with no record), *Submissions* (every record), *Drivers*, *Seal checks* (every `verifySeal` attempt; misses only by default), *Deleted*, *Past elections* (loaded on demand, read only).
+- **Search and filters** apply to the current tab. **Export CSV** exports exactly what the current tab shows. The custody export includes the record ID, Eastern local time, GPS and a map link, and the photo path. Cells that start with `=`, `+`, `-` or `@` are prefixed with `'` so Excel does not run them as formulas.
+- **Detail panel:** click any row for the stop's address, contacts, each record's seals (expected vs scanned, unexpected seals and where they belong), supplies, notes, GPS map link, photo, change history and seal checks at that location.
+- **Driver lockouts:** a red banner lists drivers locked out at a location (15 wrong seal attempts). **Reset** deletes the counter so they can try again; the misses stay in the seal-check trail.
+- Live data covers the active election only. If no election is active the dashboard shows every record.
+
 ### Editing or deleting an audit record (Admin)
 
-In the audit log, each record for the **active election** has **Edit** and **Delete**:
+In the detail panel, each record for the **active election** has **Edit** and **Delete**:
 - **Edit** lets an admin change the location, the scanned seal codes, notes and the status (or override it). Seal results are recomputed on the server. A status override stays until you pick **Auto**. Codes an admin adds are tagged as admin-added. A reason is required.
-- **Delete** is a soft delete (reason required): the record leaves the list and the CSV export and appears under **Deleted records**, where it can be restored.
+- **Delete** is a soft delete (reason required): the record leaves the list and the CSV export and appears under the **Deleted** tab, where it can be restored.
 - Every edit, delete and restore is kept in `deliveries/{id}/revisions` (who, when, why, before and after). Driver name, submission time, election, photo and GPS cannot be changed.
 - Records from past elections and older single-seal records are read-only except notes and delete/restore (legacy records) or not at all (past elections).
 - Two admins editing the same record: the second save is rejected ("changed by someone else"), reload and retry.
