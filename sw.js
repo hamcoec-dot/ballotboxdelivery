@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hcec-delivery-v11';
+const CACHE_NAME = 'hcec-delivery-v12';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
