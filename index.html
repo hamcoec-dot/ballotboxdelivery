@@ -31,6 +31,9 @@
     </div>
     <div id="userBadge" class="user-badge" style="display: none;">
       <span id="userEmailText"></span>
+      <button type="button" id="adminDashBtn" hidden class="btn btn-small btn-outline" style="color: #ffffff !important; border-color: #ffffff !important;" onclick="showView('viewAdmin')" aria-label="Back to the admin dashboard">
+        &larr; Admin
+      </button>
       <span id="queueBadge" role="button" tabindex="0" onclick="retryQueue()" style="display:none; font-size:12px; background:#b45309; color:#fff; padding:2px 8px; border-radius:10px; cursor:pointer;"></span>
       <button type="button" class="btn btn-small btn-outline" style="color: #ffffff !important; border-color: #ffffff !important;" onclick="appLogout()" aria-label="Sign out of account">
         Sign Out
@@ -209,6 +212,7 @@
   <script>
     // Application State
     let currentAccount = null;
+    let isAdminUser = false; // UX routing only; Firestore rules enforce access
     let manifestData = [];
     let selectedElection = null;
     let selectedPollingPlace = null;
@@ -255,11 +259,12 @@
             firebase.firestore().collection('admins').doc(user.uid).get()
               .then((doc) => {
                 if (!doc.exists) return showView('viewElections');
-                return loadAdminModule().then(() => { showView('viewAdmin'); initAdmin(); });
+                return loadAdminModule().then(() => { isAdminUser = true; showView('viewAdmin'); initAdmin(); });
               })
               .catch((err) => { console.warn('Admin view unavailable:', err); showView('viewElections'); }); // fail closed
           } else {
             currentAccount = null;
+            isAdminUser = false;
             manifestData = [];
             if (typeof adminReset === 'function') adminReset();
             document.getElementById('userBadge').style.display = 'none';
@@ -333,6 +338,7 @@
       const target = document.getElementById(viewId);
       if (target) target.classList.add('active');
       document.body.classList.toggle('admin-wide', viewId === 'viewAdmin');
+      document.getElementById('adminDashBtn').hidden = !isAdminUser || viewId === 'viewAdmin';
 
       if (viewId !== 'viewDelivery' && scanSession) stopBarcodeScanner();
       if (viewId === 'viewElections' && manifestData.length) {
@@ -358,7 +364,7 @@
 
       // Only one active election: skip the picker and go straight to its stops.
       const list = Object.values(elections);
-      document.getElementById('backToElectionsBtn').style.display = list.length === 1 ? 'none' : '';
+      document.getElementById('backToElectionsBtn').hidden = list.length === 1;
       if (list.length === 1 && document.getElementById('viewElections').classList.contains('active')) {
         selectElection(list[0]);
         return;
