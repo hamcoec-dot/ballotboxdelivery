@@ -305,21 +305,30 @@ function loadoutSeqHtml(i, pos, total) {
   </div>`;
 }
 
-// Compact pick list for building a custom load: one short row per stop from every day, A to Z by name, with
-// search, so a driver can pull a Day 3 stop into a Day 1 trip without scrolling through day-by-day cards.
+// Compact pick list for building a custom load: one short row per stop from every day, A to Z by precinct
+// name (drivers know stops by precinct), with search, so a driver can pull a Day 3 stop into a Day 1 trip
+// without scrolling through day-by-day cards. A place with several precincts sorts by the first one A to Z;
+// a place with no precinct on file goes at the end by its own name.
+const loCollate = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
+const loPrecinctsAZ = (i) => i.precincts.slice().sort((a, b) => loCollate(a.name || '', b.name || ''));
+
 function loadoutPickerHtml(all, s, truck, count) {
   const open = all.filter(i => !loDoneAt(s, i.location_key))
-    .sort((a, b) => a.location_name.localeCompare(b.location_name, undefined, { sensitivity: 'base', numeric: true }));
-  const rows = open.map(i => {
+    .map(i => ({ i, ps: loPrecinctsAZ(i) }))
+    .sort((a, b) => (!a.ps.length - !b.ps.length)
+      || loCollate(a.ps.length ? a.ps[0].name || '' : a.i.location_name, b.ps.length ? b.ps[0].name || '' : b.i.location_name)
+      || loCollate(a.i.location_name, b.i.location_name));
+  const rows = open.map(({ i, ps }) => {
     const on = !!s.loaded[i.location_key];
     const other = loOtherTruck(s, i.location_key);
     const boxes = i.ballot_boxes || i.slots.length;
-    const find = [i.location_name, i.address, i.route.label, precinctListText(i)].join(' ').toLowerCase();
+    const precincts = ps.map(p => `${p.name} (${p.num})`).join(', ');
+    const find = [i.location_name, i.address, i.route.label, precincts].join(' ').toLowerCase();
     return `<label class="lo-pick-row${on ? ' on' : ''}${other ? ' taken' : ''}" data-find="${escapeHtml(find)}">
       <input type="checkbox" data-lo-pick="${escapeHtml(i.location_key)}" ${on ? 'checked' : ''}>
-      <span class="lo-pick-text"><strong>${escapeHtml(i.location_name)}</strong>
+      <span class="lo-pick-text"><strong>${escapeHtml(precincts || i.location_name)}</strong>
+        ${precincts ? `<span class="lo-pick-place">${escapeHtml(i.location_name)}</span>` : ''}
         <span class="lo-pick-meta">${i.route.day == null ? 'Unscheduled' : 'Day ' + i.route.day}${i.route.label ? ` &middot; Stop ${escapeHtml(i.route.label)}` : ''} &middot; ${boxes} box${boxes === 1 ? '' : 'es'}${i.address ? ` &middot; ${escapeHtml(i.address)}` : ''}</span>
-        ${i.precincts.length ? `<span class="lo-pick-precincts">${escapeHtml(precinctListText(i))}</span>` : ''}
         ${other ? `<span class="lo-pick-taken"><span aria-hidden="true">&#x1F69A;</span> On ${escapeHtml(other)}'s truck</span>` : ''}</span>
     </label>`;
   }).join('');
