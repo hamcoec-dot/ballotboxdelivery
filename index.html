@@ -636,12 +636,17 @@
       renderSupplies();
     }
 
-    function showSealToast(msg) {
+    function showSealToast(msg, ms = 2500) {
       const t = document.getElementById('sealToast');
       t.textContent = msg;
       t.style.display = 'flex';
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2500);
+      if (ms) toastTimer = setTimeout(hideSealToast, ms);
+    }
+
+    function hideSealToast() {
+      clearTimeout(toastTimer);
+      document.getElementById('sealToast').style.display = 'none';
     }
 
     // Ask the server whether this scan is one of the location's seals.
@@ -735,21 +740,27 @@
     function getDetector() {
       if (!detectorPromise) {
         detectorPromise = (async () => {
-          let Ctor = null;
           if (!FORCE_WASM && 'BarcodeDetector' in window) {
             try {
-              if ((await BarcodeDetector.getSupportedFormats()).includes('code_128')) { Ctor = BarcodeDetector; scanEngine = 'native'; }
+              if ((await BarcodeDetector.getSupportedFormats()).includes('code_128')) { scanEngine = 'native'; return new BarcodeDetector({ formats: ['code_128'] }); }
             } catch (e) { /* fall through to WASM */ }
           }
-          if (!Ctor) {
-            await loadScript(VENDOR_DIR + 'ponyfill.iife.js');
-            BarcodeDetectionAPI.setZXingModuleOverrides({ locateFile: (f, prefix) => f.endsWith('.wasm') ? VENDOR_DIR + f : prefix + f });
-            Ctor = BarcodeDetectionAPI.BarcodeDetector; scanEngine = 'wasm';
-          }
-          return new Ctor({ formats: ['code_128'] });
+          scanEngine = 'wasm';
+          return new (await loadWasm())({ formats: ['code_128'] });
         })().catch(e => { detectorPromise = null; throw e; });
       }
       return detectorPromise;
+    }
+
+    let wasmPromise = null;
+    function loadWasm() {
+      if (!wasmPromise) {
+        wasmPromise = loadScript(VENDOR_DIR + 'ponyfill.iife.js').then(() => {
+          BarcodeDetectionAPI.setZXingModuleOverrides({ locateFile: (f, prefix) => f.endsWith('.wasm') ? VENDOR_DIR + f : prefix + f });
+          return BarcodeDetectionAPI.BarcodeDetector;
+        }).catch(e => { wasmPromise = null; throw e; });
+      }
+      return wasmPromise;
     }
 
     function sealOk(code) {
@@ -983,45 +994,81 @@
       event.target.value = '';
       if (!file || !selectedPollingPlace) return;
       const t0 = performance.now();
+      showSealToast('Reading barcode from photo\u2026', 0);
+      let bmp = null;
       try {
-        const detector = await getDetector();
-        const bmp = await createImageBitmap(file);
-        const codes = await detectInPhoto(detector, bmp);
-        if (bmp.close) bmp.close();
-        if (!codes.length) { showSealToast('No seal barcode found — retake closer, tilt to avoid glare, or type the number.'); return; }
-        const good = codes.filter(sealOk);
-        if (!good.length) { showSealToast(`Not a seal barcode (read ${codes[0]})`); return; }
+        bmp = await createImageBitmap(file);
+        const { seals, other } = await detectInPhoto(bmp);
+        if (!seals.length) {
+          showSealToast(other.length ? `Not a seal barcode (read ${other[0]})` : 'No seal barcode found. Move closer so the seal fills most of the photo, avoid glare, or type the number.', 5000);
+          return;
+        }
+        hideSealToast();
         const ms = Math.round(performance.now() - t0);
-        good.forEach(c => addScannedSeal(c, 'camera', { engine: 'photo', ms }));
+        seals.forEach(c => addScannedSeal(c, 'camera', { engine: 'photo', ms }));
         lastScan = { key: '', at: 0 };
       } catch (err) {
         console.warn('Photo scan failed:', err);
-        showSealToast('Could not read the photo. Try again or type the number.');
+        showSealToast('Could not read the photo. Try again or type the number.', 5000);
+      } finally {
+        if (bmp && bmp.close) bmp.close();
       }
     }
 
-    async function detectInPhoto(detector, bmp) {
-      const k = Math.min(1, 3200 / Math.max(bmp.width, bmp.height));
-      const W = Math.round(bmp.width * k), H = Math.round(bmp.height * k);
+    // Still photos: the zxing reader only finds bars within about 20 degrees of level or upright and
+    // needs a few pixels per bar, so try several turns and, for small or distant seals, closer crops.
+    // The phone's own detector (Android) goes first because it handles any angle; zxing always follows.
+    // Seals are Code 128; Code 39/93 are read too so a seal printed in another format is reported, not missed.
+    const PHOTO_FORMATS = ['code_128', 'code_39', 'code_93'];
+    let photoDetector = null;
+    async function detectInPhoto(bmp) {
+      const detectors = [];
+      try { const d = await getDetector(); if (scanEngine === 'native') detectors.push(d); } catch (e) { /* use zxing */ }
+      if (!photoDetector) photoDetector = new (await loadWasm())({ formats: PHOTO_FORMATS });
+      detectors.push(photoDetector);
       const cv = document.createElement('canvas');
-      const draw = (sy, sh, dw, dh, rot) => {
-        cv.width = rot ? dh : dw; cv.height = rot ? dw : dh;
-        const c = cv.getContext('2d', { willReadFrequently: true });
-        c.save();
-        if (rot) { c.translate(cv.width, 0); c.rotate(Math.PI / 2); }
-        c.drawImage(bmp, 0, sy, bmp.width, sh, 0, 0, dw, dh);
-        c.restore();
+      const ctx = cv.getContext('2d', { willReadFrequently: true });
+      const seen = new Set();
+      const seals = [], other = [];
+      // Draw region (sx, sy, sw, sh) of the photo turned by deg, longest side at most max px.
+      const draw = (sx, sy, sw, sh, deg, max) => {
+        const r = deg * Math.PI / 180, cos = Math.abs(Math.cos(r)), sin = Math.abs(Math.sin(r));
+        const k = Math.min(1, max / Math.max(sw * cos + sh * sin, sw * sin + sh * cos));
+        const w = sw * k, h = sh * k;
+        cv.width = Math.round(w * cos + h * sin); cv.height = Math.round(w * sin + h * cos);
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.save();
+        ctx.translate(cv.width / 2, cv.height / 2); ctx.rotate(r);
+        ctx.drawImage(bmp, sx, sy, sw, sh, -w / 2, -h / 2, w, h);
+        ctx.restore();
       };
-      const run = async () => [...new Set((await detector.detect(cv)).map(r => String(r.rawValue || '').trim()).filter(Boolean))];
-      draw(0, bmp.height, W, H, false);
-      let out = await run(); if (out.length) return out;
-      const up = Math.min(2, 3200 / W);
-      for (let i = 0; i < 3; i++) {
-        draw(Math.round(bmp.height * i / 3), Math.round(bmp.height / 3), Math.round(W * up), Math.round(H / 3 * up), false);
-        out = await run(); if (out.length) return out;
+      const run = async (det) => {
+        for (const f of await det.detect(cv)) {
+          const code = String(f.rawValue || '').trim();
+          if (!code || seen.has(code)) continue;
+          seen.add(code);
+          (sealOk(code) ? seals : other).push(code);
+        }
+        return seals.length > 0;
+      };
+      const W = bmp.width, H = bmp.height, angles = [0, 30, -30, 60, -60];
+      // Whole photo at each turn, then in more detail, then overlapping quarters at full detail for distant seals.
+      const passes = angles.map(deg => [0, 0, W, H, 1600, deg]);
+      passes.push([0, 0, W, H, 2560, 0]);
+      const tw = W * 2 / 3, th = H * 2 / 3;
+      for (const deg of angles) for (const [x, y] of [[0, 0], [1, 0], [0, 1], [1, 1]]) passes.push([x * tw / 2, y * th / 2, tw, th, 2048, deg]);
+      const stopAt = performance.now() + 15000;
+      try {
+        for (const det of detectors) {
+          for (const [sx, sy, sw, sh, max, deg] of det === photoDetector ? passes : [[0, 0, W, H, 1920, 0]]) {
+            draw(sx, sy, sw, sh, deg, max);
+            if (await run(det) || performance.now() > stopAt) return { seals, other };
+          }
+        }
+        return { seals, other };
+      } finally {
+        cv.width = cv.height = 1; // let iOS Safari free the canvas memory now
       }
-      draw(0, bmp.height, W, H, true);
-      return run();
     }
 
     // Photo Capture Handling
