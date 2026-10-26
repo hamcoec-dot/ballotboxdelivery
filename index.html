@@ -270,6 +270,7 @@
           } else {
             currentAccount = null;
             isAdminUser = false;
+            if (typeof loadoutUnwatch === 'function') loadoutUnwatch();
             manifestData = [];
             if (typeof adminReset === 'function') adminReset();
             document.getElementById('userBadge').style.display = 'none';
@@ -441,6 +442,7 @@
         listContainer.appendChild(section);
       });
       filterPollingPlaces();
+      if (typeof loadoutWatch === 'function') loadoutWatch();
       if (typeof loadoutUpdateEntryButton === 'function') loadoutUpdateEntryButton();
     }
 
@@ -458,6 +460,7 @@
         <p class="meta-line" style="margin-bottom: 8px;${noSeals ? ' color: var(--danger-color);' : ''}">
           ${noSeals ? '&#x26A0;&#xFE0F; No seals on file' : `&#x1F512; ${item.slots.length} seal${item.slots.length === 1 ? '' : 's'}`}${item.supplies.length ? ` &middot; &#x1F9F0; ${item.supplies.length} supply item${item.supplies.length === 1 ? '' : 's'}` : ''}
         </p>
+        ${typeof loadoutStatusHtml === 'function' ? loadoutStatusHtml(item) : ''}
       `;
       const link = card.querySelector('.map-link');
       if (link) link.addEventListener('click', e => e.stopPropagation());

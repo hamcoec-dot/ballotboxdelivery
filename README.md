@@ -105,7 +105,7 @@ Do not commit export files (`*.csv` is git-ignored).
 
 ### Truck Loadout List (Drivers)
 
-From the stop list, **Truck Loadout List** shows every stop with what goes on the truck for it: ballot boxes and the machines (precinct, machine number, serial) plus each supply quantity from the delivery schedule. Filter by **All days** or a day, tick **On truck** for the stops in this trip (from any day, or **Add next 5 stops** in route order), and the trip totals add up what to load. **Start Delivery** opens the normal delivery screen and comes back to the list after recording.
+From the stop list, **Truck Loadout List** shows every stop with what goes on the truck for it: ballot boxes and the machines (precinct, machine number, serial) plus each supply quantity from the delivery schedule. Filter by **All days** or a day, tick **On my truck** for the stops in this trip (from any day, or **Add next 5 stops** in route order), and the trip totals add up what to load. **Start Delivery** opens the normal delivery screen and comes back to the list after recording.
 
 ### My Load: custom delivery load (Drivers)
 
@@ -115,12 +115,16 @@ The scheduled day order does not always survive contact with the day, so drivers
 2. **Load details** - the totals to pull for this load (ballot boxes/machines and each supply), then each stop with its day, machines and supplies. **Take off load** removes one.
 3. **Deliver** - the stops as a numbered sequence in the order they were added. The top one is tagged **Next stop**; **Start next stop** opens it. Rearrange with the up and down arrows, or **Use route order** to drop back to the scheduled day/stop order.
 
-Opening My Load starts at **Build load** when it is empty and at **Deliver** when it is not. Ticking **On truck** in the day-by-day loadout adds to the same load.
+Opening My Load starts at **Build load** when it is empty and at **Deliver** when it is not. Ticking **On my truck** in the day-by-day loadout adds to the same load.
 
-Picks, the chosen order and delivered marks are kept in `localStorage` on that phone, so the load survives a reload and works offline. Recording a delivery (or **Mark delivered**) takes the stop off the load automatically. Drivers cannot read the `deliveries` collection, so stops delivered from another phone are not shown as delivered here.
+### Drivers see each other's work
 
-- Picks and delivered marks are kept on the phone only (works offline). A stop is marked delivered when a delivery is recorded or queued on that phone, or by **Mark delivered** (which records nothing).
-- Drivers cannot read delivery records, so stops another driver delivered do not show as delivered.
+Every driver sees, live, which stops are delivered and which are on another driver's truck: on the stop list, in the loadout and in **Build load** (delivered stops drop off the list; stops on someone else's truck are flagged "On kjones's truck"). Ticking one of those asks before moving it to your load, and the other driver gets a notice that it is off theirs.
+
+- **Delivered means a chain of custody record exists.** There is no way to mark a stop delivered by hand. A delivery recorded offline counts on that phone right away and for everyone once it syncs.
+- The status lives in `elections/{electionId}/stop_status/{locationKey}`: `truck_uid/truck_name/truck_at` (written by drivers, who can only set or clear their own flag; admins can clear any) and `delivered_at/delivered_by/delivery_id` (written only by `submitDelivery`, and recomputed when an admin moves, deletes or restores a record). It holds no seal numbers, photos or GPS. Drivers still cannot read `deliveries`.
+- **Clear test data** also clears this status for the election.
+- The load (picks and chosen order) is also kept in `localStorage` so it works with no signal; when the phone reaches the server, the shared status wins.
 
 ### Delivery Monitoring dashboard (Admin)
 

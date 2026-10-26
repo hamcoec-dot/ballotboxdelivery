@@ -6,6 +6,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { csvToObjects, parsePrecinctsCSV, parseScheduleCSV, buildManifest, normSeal, deriveSealFormat } = require('./manifest');
 const { splitLocation, matchSlot, computeDelivery, computeSupplies, reconstructScans, mergeScans, applyAdminEdit, UUID_RE } = require('./delivery');
 const { clearBlockedReason, recordedBeforeClear } = require('./cleanup');
+const { DELIVERED_FIELDS, shortName, deliveredFields } = require('./stopstatus');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'us-east1', maxInstances: 10 });
@@ -43,6 +44,16 @@ async function resolveBelongsTo(eref, locationKey, unexpected) {
     belongs[normSeal(u.code)] = hit ? hit[0] : null;
   });
   return belongs;
+}
+
+// Recompute a stop's shared delivered status from its delivery records (after an admin edit, move,
+// delete or restore). Never touches whose truck it is on.
+async function refreshStopStatus(electionId, locationKey) {
+  if (!electionId || !locationKey) return;
+  const snap = await db.collection('deliveries').where('election_id', '==', electionId).where('location_key', '==', locationKey).get();
+  const fields = deliveredFields(snap.docs.map(x => ({ id: x.id, data: x.data() })));
+  const clear = Object.fromEntries(DELIVERED_FIELDS.map(k => [k, FieldValue.delete()]));
+  await db.doc(`elections/${electionId}/stop_status/${locationKey}`).set(fields || clear, { merge: true });
 }
 
 // ---------------------------------------------------------------- importElection
@@ -245,6 +256,11 @@ exports.submitDelivery = onCall(async (req) => {
     if (e.code === 6) return summary((await dref.get()).data()); // concurrent retry
     throw e;
   }
+  // Every driver sees the stop as delivered and off the truck. Never fail a recorded delivery over this.
+  await eref.collection('stop_status').doc(locationKey).set({
+    delivered_at: FieldValue.serverTimestamp(), delivered_by: shortName(record.driver_email), delivery_id: clientId,
+    truck_uid: FieldValue.delete(), truck_name: FieldValue.delete(), truck_at: FieldValue.delete()
+  }, { merge: true }).catch(e => console.error('stop_status update failed', electionId, locationKey, e));
   return { match_status: result.match_status, scanned_count: result.scanned_count, expected_count: result.expected_count, supplies_status: record.supplies_status };
 });
 
@@ -352,6 +368,10 @@ exports.adminUpdateDelivery = onCall(async (req) => {
   });
 
   const merged = { ...existing, ...result.update };
+  if (merged.location_key !== existing.location_key) {
+    await Promise.all([refreshStopStatus(existing.election_id, existing.location_key), refreshStopStatus(existing.election_id, merged.location_key)])
+      .catch(e => console.error('stop_status refresh failed', deliveryId, e));
+  }
   return {
     match_status: merged.match_status, computed_status: merged.computed_status || merged.match_status,
     status_overridden: !!merged.status_overridden, edit_count: baseEditCount + 1
@@ -384,12 +404,14 @@ exports.adminSetDeliveryDeleted = onCall(async (req) => {
       before: { deleted: !!existing.deleted }, after: { deleted: d.deleted }
     });
   });
+  await refreshStopStatus(existing.election_id, existing.location_key).catch(e => console.error('stop_status refresh failed', deliveryId, e));
   return { deleted: d.deleted, edit_count: baseEditCount + 1 };
 });
 
 // ---------------------------------------------------------------- clearTestData
-// Removes one election's practice run: deliveries (with their history), seal checks, driver lockouts and
-// delivery photos. The imported stop list and expected seals stay, so real deliveries can start at once.
+// Removes one election's practice run: deliveries (with their history), seal checks, driver lockouts,
+// delivery photos and the shared truck/delivered flags drivers see. The imported stop list and expected seals
+// stay, so real deliveries can start at once.
 // Everything removed is first copied to Storage under backups/test-data/ (not readable by any client).
 // Refused from election day on. Without commit it only counts what would be removed.
 exports.clearTestData = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (req) => {
@@ -403,7 +425,8 @@ exports.clearTestData = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (r
   if (blocked) throw new HttpsError('failed-precondition', blocked);
 
   const byElection = (name) => db.collection(name).where('election_id', '==', electionId).get();
-  const [dSnap, cSnap, rSnap] = await Promise.all([byElection('deliveries'), byElection('seal_checks'), byElection('rate_limits')]);
+  const [dSnap, cSnap, rSnap, sSnap] = await Promise.all([byElection('deliveries'), byElection('seal_checks'), byElection('rate_limits'),
+    db.collection(`elections/${electionId}/stop_status`).get()]);
   const photoPaths = [...new Set(dSnap.docs.map(x => x.data().photo_path).filter(p => typeof p === 'string' && p.startsWith('photos/')))];
   const counts = { deliveries: dSnap.size, seal_checks: cSnap.size, lockouts: rSnap.size, photos: photoPaths.length };
   const election = { id: electionId, name: elec.name, date: elec.date };
@@ -444,7 +467,7 @@ exports.clearTestData = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (r
   let failedDeletes = 0;
   const del = (ref) => writer.delete(ref).catch(() => { failedDeletes++; });
   revSnaps.forEach(s => s.docs.forEach(x => del(x.ref)));
-  [dSnap, cSnap, rSnap].forEach(s => s.docs.forEach(x => del(x.ref)));
+  [dSnap, cSnap, rSnap, sSnap].forEach(s => s.docs.forEach(x => del(x.ref)));   // stop_status: drivers' truck and delivered flags
   await writer.close();
 
   // 5. Audit record of who did it.
