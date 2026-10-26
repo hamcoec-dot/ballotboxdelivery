@@ -109,10 +109,13 @@ From the stop list, **Truck Loadout List** shows every stop with what goes on th
 
 ### My Load: custom delivery load (Drivers)
 
-The scheduled day order does not always survive contact with the day, so drivers can build their own load. **My Load** on the stop list (or the **My load** chip in the loadout) opens the stops ticked **On truck**, mixed from any day, with two tabs:
+The scheduled day order does not always survive contact with the day, so drivers can build their own load from any mix of days. **My Load** on the stop list walks through three steps:
 
-- **What to load** - the totals to pull for this load (ballot boxes/machines and each supply), then each picked stop with its day, machines and supplies.
-- **Delivery order** - the same stops as a numbered sequence. The top one is tagged **Next stop**; **Start next stop** opens it. Arrange with the up and down arrows, or **Use route order** to drop back to the scheduled day/stop order. **Take off load** removes a stop without marking it delivered.
+1. **Build load** - every undelivered stop from every day in one compact A to Z list, with a search box (name, stop number, precinct or address). Tick the stops to take; the bar at the bottom keeps a running count of stops and boxes.
+2. **Load details** - the totals to pull for this load (ballot boxes/machines and each supply), then each stop with its day, machines and supplies. **Take off load** removes one.
+3. **Deliver** - the stops as a numbered sequence in the order they were added. The top one is tagged **Next stop**; **Start next stop** opens it. Rearrange with the up and down arrows, or **Use route order** to drop back to the scheduled day/stop order.
+
+Opening My Load starts at **Build load** when it is empty and at **Deliver** when it is not. Ticking **On truck** in the day-by-day loadout adds to the same load.
 
 Picks, the chosen order and delivered marks are kept in `localStorage` on that phone, so the load survives a reload and works offline. Recording a delivery (or **Mark delivered**) takes the stop off the load automatically. Drivers cannot read the `deliveries` collection, so stops delivered from another phone are not shown as delivered here.
 

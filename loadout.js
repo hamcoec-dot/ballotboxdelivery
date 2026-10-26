@@ -10,7 +10,7 @@
 
 let loadoutDay = null;
 let loadoutHideDelivered = true;
-let loadoutTruckTab = 'load';   // 'load' = what to pull for this load, 'order' = the delivery sequence
+let loadoutTruckTab = 'add';    // My Load steps: 'add' = 1 build the load, 'load' = 2 load details, 'order' = 3 deliver
 
 const loadoutKey = () => `hcec_loadout_${selectedElection ? selectedElection.id : ''}_${currentAccount ? currentAccount.uid : ''}`;
 
@@ -60,7 +60,10 @@ function loadoutPicks(all, s) {
 // loadoutDay is 'all', a day number, or 'truck' (My load: only the stops picked for this trip, from any day)
 function openLoadout(mode) {
   const days = loadoutDays();
-  if (mode === 'truck') loadoutDay = 'truck';
+  if (mode === 'truck') {
+    loadoutDay = 'truck';
+    loadoutTruckTab = loadoutPicks(loadoutStops(), loadoutState()).length ? 'order' : 'add';
+  }
   else if (dayFilter !== 'all' && days.includes(Number(dayFilter))) loadoutDay = Number(dayFilter);
   else if (loadoutDay == null) loadoutDay = 'all';
   renderLoadout();
@@ -94,7 +97,8 @@ function loadLinesHtml(t) {
   return `<ul class="lo-lines">${lines.join('')}</ul>`;
 }
 
-function loadoutStopHtml(i, s, showDay) {
+function loadoutStopHtml(i, s, inLoad) {
+  const showDay = inLoad;
   const k = escapeHtml(i.location_key);
   const dayTag = showDay ? (i.route.day == null ? 'Unscheduled' : 'Day ' + i.route.day) + ' &middot; ' : '';
   const isDone = !!s.delivered[i.location_key];
@@ -115,6 +119,8 @@ function loadoutStopHtml(i, s, showDay) {
     ${isDone
       ? `<p class="lo-done-line"><span aria-hidden="true">&#x2705;</span> Delivered ${escapeHtml(doneAt)}</p>
          <button type="button" class="btn btn-small btn-outline" data-lo-undo="${k}" aria-label="Undo delivered mark for ${escapeHtml(i.location_name)}">Undo delivered</button>`
+      : inLoad
+      ? `<button type="button" class="btn btn-small btn-outline" data-lo-drop="${k}" aria-label="Take ${escapeHtml(i.location_name)} off this load">Take off load</button>`
       : `<label class="lo-check"><input type="checkbox" data-lo-load="${k}" ${isLoaded ? 'checked' : ''}> <span>On truck</span></label>
          <div class="lo-actions">
            <button type="button" class="btn btn-small" data-lo-open="${k}" aria-label="Start delivery at ${escapeHtml(i.location_name)}">Start Delivery &rarr;</button>
@@ -153,6 +159,46 @@ function loadoutSeqHtml(i, pos, total) {
   </div>`;
 }
 
+// Compact pick list for building a custom load: one short row per stop from every day, A to Z by name, with
+// search, so a driver can pull a Day 3 stop into a Day 1 trip without scrolling through day-by-day cards.
+function loadoutPickerHtml(all, s, truck, count) {
+  const open = all.filter(i => !s.delivered[i.location_key])
+    .sort((a, b) => a.location_name.localeCompare(b.location_name, undefined, { sensitivity: 'base', numeric: true }));
+  const rows = open.map(i => {
+    const on = !!s.loaded[i.location_key];
+    const boxes = i.ballot_boxes || i.slots.length;
+    const find = [i.location_name, i.address, i.route.label, precinctListText(i)].join(' ').toLowerCase();
+    return `<label class="lo-pick-row${on ? ' on' : ''}" data-find="${escapeHtml(find)}">
+      <input type="checkbox" data-lo-pick="${escapeHtml(i.location_key)}" ${on ? 'checked' : ''}>
+      <span class="lo-pick-text"><strong>${escapeHtml(i.location_name)}</strong>
+        <span class="lo-pick-meta">${i.route.day == null ? 'Unscheduled' : 'Day ' + i.route.day}${i.route.label ? ` &middot; Stop ${escapeHtml(i.route.label)}` : ''} &middot; ${boxes} box${boxes === 1 ? '' : 'es'}${i.address ? ` &middot; ${escapeHtml(i.address)}` : ''}</span></span>
+    </label>`;
+  }).join('');
+  return `<div class="form-group" style="margin-bottom: 8px;">
+      <label for="loPickSearch">Find a stop</label>
+      <input type="text" id="loPickSearch" placeholder="Name, stop number, precinct or address" oninput="loadoutFilterPicker()" autocomplete="off">
+    </div>
+    <div class="lo-pick-list">${rows || '<p class="hint">Every stop is marked delivered.</p>'}</div>
+    <p class="hint" id="loPickNone" hidden>No stops match. Try part of the name or the precinct number.</p>
+    <div class="lo-pick-bar" id="loPickBar" aria-live="polite">${loadoutPickBarHtml(count, truck)}</div>`;
+}
+
+function loadoutPickBarHtml(count, truck) {
+  return `<span><strong>${count}</strong> stop${count === 1 ? '' : 's'} &middot; ${truck.boxes} box${truck.boxes === 1 ? '' : 'es'}</span>
+    <button type="button" class="btn btn-small" ${count ? '' : 'disabled'} onclick="setLoadoutTruckTab('load')">Next: load details &rarr;</button>`;
+}
+
+function loadoutFilterPicker() {
+  const q = (document.getElementById('loPickSearch').value || '').trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll('#viewLoadout .lo-pick-row').forEach(r => {
+    const hit = !q || r.dataset.find.includes(q);
+    r.hidden = !hit;
+    if (hit) shown++;
+  });
+  document.getElementById('loPickNone').hidden = shown > 0;
+}
+
 function renderLoadout() {
   const view = document.getElementById('viewLoadout');
   const all = loadoutStops();
@@ -177,47 +223,49 @@ function renderLoadout() {
 
   // Custom load: pick stops from any day, see the loadout for them, then work them in your own order.
   if (isTruck) {
-    const tab = (value, label) => {
+    if (!onTruck.length) loadoutTruckTab = 'add';
+    const step = (value, n, label) => {
       const on = loadoutTruckTab === value;
-      return `<button type="button" class="btn btn-small${on ? '' : ' btn-outline'}" aria-pressed="${on}" onclick="setLoadoutTruckTab('${value}')">${label}</button>`;
+      const off = value !== 'add' && !onTruck.length;
+      return `<button type="button" class="lo-step${on ? ' on' : ''}" ${on ? 'aria-current="step"' : ''} ${off ? 'disabled' : ''} onclick="setLoadoutTruckTab('${value}')"><span class="lo-step-n">${n}</span> ${label}</button>`;
     };
-    const seqCards = onTruck.map((i, n) => loadoutSeqHtml(i, n + 1, onTruck.length)).join('');
-    const loadCards = onTruck.map(i => loadoutStopHtml(i, s, true)).join('');
     const doneToday = Object.keys(s.delivered).length;
+    let body;
+    if (loadoutTruckTab === 'add') {
+      body = loadoutPickerHtml(all, s, truck, onTruck.length);
+    } else if (seqTab) {
+      body = `<section class="lo-truck" aria-live="polite">
+           <h3 class="step-title" style="margin-bottom: 8px;">Deliver in this order</h3>
+           <p class="hint">Use &uarr; and &darr; to rearrange. The top stop is your next one.</p>
+           <div class="lo-actions">
+             <button type="button" class="btn btn-small" data-lo-open="${escapeHtml(onTruck[0].location_key)}" aria-label="Start delivery at ${escapeHtml(onTruck[0].location_name)}">Start next stop &rarr;</button>
+             <button type="button" class="btn btn-small btn-outline" onclick="loadoutSortRoute()" aria-label="Put this load back in scheduled route order">Use route order</button>
+           </div>
+         </section>
+         <div class="lo-list">${onTruck.map((i, n) => loadoutSeqHtml(i, n + 1, onTruck.length)).join('')}</div>`;
+    } else {
+      body = `<section class="lo-truck" aria-live="polite">
+           <h3 class="step-title" style="margin-bottom: 8px;">Pull this for the load</h3>
+           ${loadLinesHtml(truck)}
+         </section>
+         <div class="lo-list">${onTruck.map(i => loadoutStopHtml(i, s, true)).join('')}</div>
+         <div class="lo-actions" style="margin-top: 12px;">
+           <button type="button" class="btn btn-small" onclick="setLoadoutTruckTab('order')">Loaded. Start delivering &rarr;</button>
+           <button type="button" class="btn btn-small btn-outline" onclick="setLoadoutTruckTab('add')">&larr; Add or remove stops</button>
+           <button type="button" class="btn btn-small btn-outline" onclick="loadoutClearTruck()">Empty load</button>
+         </div>`;
+    }
 
     view.innerHTML = `<div class="card">
       <div class="lo-head">
         <h2 class="card-title" style="margin-bottom: 0 !important;"><span aria-hidden="true">&#x1F69A;</span> My Load</h2>
         <button type="button" class="btn btn-small btn-secondary" onclick="showView('viewPollingPlaces')" aria-label="Back to stop list">&larr; Back to Stops</button>
       </div>
-      ${chips}
       <p class="meta-line lo-progress"><strong>${onTruck.length}</strong> stop${onTruck.length === 1 ? '' : 's'} on this load, mixed from any day${doneToday ? ` &middot; ${doneToday} delivered from this phone` : ''}</p>
-
-      ${onTruck.length ? `<div class="lo-chips lo-tabs" role="group" aria-label="Show">${tab('load', 'What to load')}${tab('order', 'Delivery order')}</div>` : ''}
-
-      ${onTruck.length ? (seqTab
-        ? `<section class="lo-truck" aria-live="polite">
-             <h3 class="step-title" style="margin-bottom: 8px;">Deliver in this order</h3>
-             <p class="hint">Use &uarr; and &darr; to rearrange. The top stop is your next one.</p>
-             <div class="lo-actions">
-               <button type="button" class="btn btn-small" data-lo-open="${escapeHtml(onTruck[0].location_key)}" aria-label="Start delivery at ${escapeHtml(onTruck[0].location_name)}">Start next stop &rarr;</button>
-               <button type="button" class="btn btn-small btn-outline" onclick="loadoutSortRoute()" aria-label="Put this load back in scheduled route order">Use route order</button>
-             </div>
-           </section>
-           <div class="lo-list">${seqCards}</div>`
-        : `<section class="lo-truck" aria-live="polite">
-             <h3 class="step-title" style="margin-bottom: 8px;">Pull this for the load</h3>
-             ${loadLinesHtml(truck)}
-             <div class="lo-actions">
-               <button type="button" class="btn btn-small" onclick="setLoadoutTruckTab('order')">See delivery order &rarr;</button>
-               <button type="button" class="btn btn-small btn-outline" onclick="loadoutClearTruck()">Empty load</button>
-             </div>
-           </section>
-           <div class="lo-list">${loadCards}</div>`)
-        : `<p class="hint">This load is empty. Pick a day above or <strong>All days</strong>, then tick <strong>On truck</strong> for each stop you are taking, from any day you like. The totals to pull and the delivery order show up here.</p>
-           <div class="lo-actions"><button type="button" class="btn btn-small" onclick="setLoadoutDay('all')">Pick stops &rarr;</button></div>`}
-
+      <nav class="lo-steps" aria-label="My Load steps">${step('add', 1, 'Build load')}${step('load', 2, 'Load details')}${step('order', 3, 'Deliver')}</nav>
+      ${body}
       <p class="hint" style="margin-top: 16px;">Delivered marks come from deliveries recorded on this phone, or <strong>Mark delivered</strong>. Stops another driver delivered do not show as delivered here.</p>
+      <button type="button" class="btn btn-small btn-outline" style="margin-top: 8px;" onclick="setLoadoutDay('all')" aria-label="Open the loadout list by delivery day">Loadout by day</button>
     </div>`;
     loadoutUpdateEntryButton();
     return;
@@ -309,18 +357,29 @@ function loadoutUpdateEntryButton() {
   btn.setAttribute('aria-label', `Open my custom delivery load, ${n} stop${n === 1 ? '' : 's'} on it`);
 }
 
-function loadoutSetPick(key, on) {
+function loadoutStorePick(key, on) {
   const s = loadoutState();
   s.order = s.order.filter(k => k !== key);
   if (on) { s.loaded[key] = true; s.order.push(key); } else { delete s.loaded[key]; }
   loadoutSave(s);
-  renderLoadout();
+  return s;
 }
+function loadoutSetPick(key, on) { loadoutStorePick(key, on); renderLoadout(); }
 
 document.addEventListener('change', (e) => {
   const cb = e.target.closest && e.target.closest('input[data-lo-load]');
-  if (!cb) return;
-  loadoutSetPick(cb.dataset.loLoad, cb.checked);
+  if (cb) return loadoutSetPick(cb.dataset.loLoad, cb.checked);
+  // pick list: update in place so the search box and scroll position stay put
+  const pick = e.target.closest && e.target.closest('input[data-lo-pick]');
+  if (!pick) return;
+  const s = loadoutStorePick(pick.dataset.loPick, pick.checked);
+  pick.closest('.lo-pick-row').classList.toggle('on', pick.checked);
+  const picks = loadoutPicks(loadoutStops(), s);
+  const bar = document.getElementById('loPickBar');
+  if (bar) bar.innerHTML = loadoutPickBarHtml(picks.length, sumLoad(picks));
+  const progress = document.querySelector('#viewLoadout .lo-progress strong');
+  if (progress) progress.textContent = picks.length;
+  loadoutUpdateEntryButton();
 });
 
 document.addEventListener('click', (e) => {
