@@ -27,6 +27,27 @@ service cloud.firestore {
       match /expected/{locKey} {
         allow read, write: if false;
       }
+      // Shared per-stop status every driver sees (see functions/src/stopstatus.js). Drivers may only put a
+      // stop on their own truck (or take it over from another driver) and take it off; admins may take any
+      // stop off. delivered_* is written only by the functions. Nothing here is custody evidence.
+      match /stop_status/{locKey} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['truck_uid', 'truck_name', 'truck_at'])
+          && ownTruck();
+        allow update: if signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['truck_uid', 'truck_name', 'truck_at'])
+          && (ownTruck()
+              || (!request.resource.data.keys().hasAny(['truck_uid', 'truck_name', 'truck_at'])
+                  && (resource.data.get('truck_uid', null) == request.auth.uid || isAdmin())));
+        allow delete: if false;
+      }
+    }
+    // The stop is on the signed-in driver's truck, under their own name, stamped now.
+    function ownTruck() {
+      return request.resource.data.get('truck_uid', null) == request.auth.uid
+        && request.resource.data.get('truck_name', null) == request.auth.token.email.split('@')[0]
+        && request.resource.data.get('truck_at', null) == request.time;
     }
 
     // Deliveries are created by submitDelivery and changed only by adminUpdateDelivery /

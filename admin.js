@@ -224,6 +224,9 @@ async function initAdmin() {
   try { await manifestReady; } catch (e) { /* loadElections shows its own error */ }
   subscribeAdminData();
   renderAdminAll();
+  // Keep the delivered status drivers see in step with the records (fills in stops delivered before it existed).
+  activeElectionIds().forEach(id => callFn('rebuildStopStatus', { electionId: id })
+    .catch(e => console.warn('Could not refresh driver stop status:', e)));
 }
 
 // Called by index.html whenever loadElections() finishes (e.g. after a new import).

@@ -93,9 +93,14 @@
 
         <div id="dayChips" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;"></div>
 
-        <button type="button" class="btn btn-outline" style="margin-bottom: 16px;" onclick="openLoadout()" aria-label="Open the truck loadout list for a delivery day">
-          <span aria-hidden="true">&#x1F69A;</span> Truck Loadout List
-        </button>
+        <div class="lo-entry">
+          <button type="button" class="btn btn-outline" onclick="openLoadout()" aria-label="Open the truck loadout list for a delivery day">
+            <span aria-hidden="true">&#x1F4CB;</span> Truck Loadout List
+          </button>
+          <button type="button" id="myLoadBtn" class="btn btn-outline" onclick="openLoadout('truck')" aria-label="Open my custom delivery load">
+            <span aria-hidden="true">&#x1F69A;</span> My Load
+          </button>
+        </div>
 
         <div id="pollingPlacesList">
           <!-- Dynamically populated -->
@@ -261,6 +266,7 @@
           } else {
             currentAccount = null;
             isAdminUser = false;
+            if (typeof loadoutUnwatch === 'function') loadoutUnwatch();
             manifestData = [];
             if (typeof adminReset === 'function') adminReset();
             document.getElementById('userBadge').style.display = 'none';
@@ -432,6 +438,8 @@
         listContainer.appendChild(section);
       });
       filterPollingPlaces();
+      if (typeof loadoutWatch === 'function') loadoutWatch();
+      if (typeof loadoutUpdateEntryButton === 'function') loadoutUpdateEntryButton();
     }
 
     function buildStopCard(item) {
@@ -448,6 +456,7 @@
         <p class="meta-line" style="margin-bottom: 8px;${noSeals ? ' color: var(--danger-color);' : ''}">
           ${noSeals ? '&#x26A0;&#xFE0F; No seals on file' : `&#x1F512; ${item.slots.length} seal${item.slots.length === 1 ? '' : 's'}`}${item.supplies.length ? ` &middot; &#x1F9F0; ${item.supplies.length} supply item${item.supplies.length === 1 ? '' : 's'}` : ''}
         </p>
+        ${typeof loadoutStatusHtml === 'function' ? loadoutStatusHtml(item) : ''}
       `;
       const link = card.querySelector('.map-link');
       if (link) link.addEventListener('click', e => e.stopPropagation());

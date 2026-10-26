@@ -13,7 +13,8 @@ Hosted entirely as a static single-page application on **GitHub Pages**, backed 
 - **Delivery Photograph Capture:** Integrates with native camera to capture and upload proof-of-delivery photos.
 - **GPS Timestamp Logging:** Automatically captures precise geolocation coordinates upon delivery submit.
 - **Offline Mode & Persistence:** Operates seamlessly offline via Service Worker caching and Firestore offline persistence.
-- **Truck Loadout List:** per-day (or hand-picked) list of every stop's ballot boxes, machines and supplies, with trip totals, so drivers load without opening each stop.
+- **Truck Loadout List:** per-day list of every stop's ballot boxes, machines and supplies, with trip totals, so drivers load without opening each stop.
+- **My Load (custom load):** drivers hand-pick stops from any delivery day into one load, see the loadout totals for just that load, then work it as a delivery sequence they can rearrange on the fly.
 - **Admin Delivery Monitoring Dashboard (desktop):** Live progress by day, stops not yet delivered, seal and supply problems, duplicate submissions, driver activity, the seal-check trail and driver lockouts, with search, filters, a detail panel (photo, GPS, notes, change history) and filter-aware CSV export.
 - **HTML Design Playbook Compliant:** Built to strict HCEC rules (WCAG 2.1 AA, fluid flexbox, no `<form>` tags, ASCII entities, high contrast).
 
@@ -104,10 +105,26 @@ Do not commit export files (`*.csv` is git-ignored).
 
 ### Truck Loadout List (Drivers)
 
-From the stop list, **Truck Loadout List** shows every stop with what goes on the truck for it: ballot boxes and the machines (precinct, machine number, serial) plus each supply quantity from the delivery schedule. Filter by **All days** or a day, tick **On truck** for the stops in this trip (from any day, or **Add next 5 stops** in route order), and the trip totals add up what to load. **On truck** shows only the picked stops. **Start Delivery** opens the normal delivery screen and comes back to the list after recording.
+From the stop list, **Truck Loadout List** shows every stop with what goes on the truck for it: ballot boxes and the machines (precinct, machine number, serial) plus each supply quantity from the delivery schedule. Filter by **All days** or a day, tick **On my truck** for the stops in this trip (from any day, or **Add next 5 stops** in route order), and the trip totals add up what to load. **Start Delivery** opens the normal delivery screen and comes back to the list after recording.
 
-- Picks and delivered marks are kept on the phone only (works offline). A stop is marked delivered when a delivery is recorded or queued on that phone, or by **Mark delivered** (which records nothing).
-- Drivers cannot read delivery records, so stops another driver delivered do not show as delivered.
+### My Load: custom delivery load (Drivers)
+
+The scheduled day order does not always survive contact with the day, so drivers can build their own load from any mix of days. **My Load** on the stop list walks through three steps:
+
+1. **Build load** - every undelivered stop from every day in one compact A to Z list (name, day/stop, boxes, address and precinct names), with a search box (name, stop number, precinct or address). Tick the stops to take; the bar at the bottom keeps a running count of stops and boxes.
+2. **Load details** - the totals to pull for this load (ballot boxes/machines and each supply), then each stop with its day, machines and supplies. **Take off load** removes one.
+3. **Deliver** - the stops as a numbered sequence in the order they were added. The top one is tagged **Next stop**; **Start next stop** opens it. Rearrange with the up and down arrows, or **Use route order** to drop back to the scheduled day/stop order.
+
+Opening My Load starts at **Build load** when it is empty and at **Deliver** when it is not. Ticking **On my truck** in the day-by-day loadout adds to the same load.
+
+### Drivers see each other's work
+
+Every driver sees, live, which stops are delivered and which are on another driver's truck: on the stop list, in the loadout and in **Build load** (delivered stops drop off the list; stops on someone else's truck are flagged "On kjones's truck"). Ticking one of those asks before moving it to your load, and the other driver gets a notice that it is off theirs.
+
+- **Delivered means a chain of custody record exists.** There is no way to mark a stop delivered by hand. A delivery recorded offline counts on that phone right away and for everyone once it syncs.
+- The status lives in `elections/{electionId}/stop_status/{locationKey}`: `truck_uid/truck_name/truck_at` (written by drivers, who can only set or clear their own flag; admins can clear any) and `delivered_at/delivered_by/delivery_id` (written only by `submitDelivery`, and recomputed when an admin moves, deletes or restores a record). It holds no seal numbers, photos or GPS. Drivers still cannot read `deliveries`.
+- **Clear test data** also clears this status for the election. Opening the admin dashboard runs `rebuildStopStatus`, which fills in delivered status from the live records (it only adds or corrects `delivered_*`, never deletes records or truck flags).
+- The load (picks and chosen order) is also kept in `localStorage` so it works with no signal; when the phone reaches the server, the shared status wins.
 
 ### Delivery Monitoring dashboard (Admin)
 
