@@ -111,7 +111,7 @@ From the stop list, **Truck Loadout List** shows every stop with what goes on th
 
 The scheduled day order does not always survive contact with the day, so drivers can build their own load from any mix of days. **My Load** on the stop list walks through three steps:
 
-1. **Build load** - every undelivered stop from every day in one compact A to Z list, with a search box (name, stop number, precinct or address). Tick the stops to take; the bar at the bottom keeps a running count of stops and boxes.
+1. **Build load** - every undelivered stop from every day in one compact A to Z list (name, day/stop, boxes, address and precinct names), with a search box (name, stop number, precinct or address). Tick the stops to take; the bar at the bottom keeps a running count of stops and boxes.
 2. **Load details** - the totals to pull for this load (ballot boxes/machines and each supply), then each stop with its day, machines and supplies. **Take off load** removes one.
 3. **Deliver** - the stops as a numbered sequence in the order they were added. The top one is tagged **Next stop**; **Start next stop** opens it. Rearrange with the up and down arrows, or **Use route order** to drop back to the scheduled day/stop order.
 

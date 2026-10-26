@@ -171,7 +171,8 @@ function loadoutPickerHtml(all, s, truck, count) {
     return `<label class="lo-pick-row${on ? ' on' : ''}" data-find="${escapeHtml(find)}">
       <input type="checkbox" data-lo-pick="${escapeHtml(i.location_key)}" ${on ? 'checked' : ''}>
       <span class="lo-pick-text"><strong>${escapeHtml(i.location_name)}</strong>
-        <span class="lo-pick-meta">${i.route.day == null ? 'Unscheduled' : 'Day ' + i.route.day}${i.route.label ? ` &middot; Stop ${escapeHtml(i.route.label)}` : ''} &middot; ${boxes} box${boxes === 1 ? '' : 'es'}${i.address ? ` &middot; ${escapeHtml(i.address)}` : ''}</span></span>
+        <span class="lo-pick-meta">${i.route.day == null ? 'Unscheduled' : 'Day ' + i.route.day}${i.route.label ? ` &middot; Stop ${escapeHtml(i.route.label)}` : ''} &middot; ${boxes} box${boxes === 1 ? '' : 'es'}${i.address ? ` &middot; ${escapeHtml(i.address)}` : ''}</span>
+        ${i.precincts.length ? `<span class="lo-pick-precincts">${escapeHtml(precinctListText(i))}</span>` : ''}</span>
     </label>`;
   }).join('');
   return `<div class="form-group" style="margin-bottom: 8px;">

@@ -545,3 +545,4 @@ body.admin-wide .container { max-width: 1680px !important; padding: 20px 24px !i
 .lo-step[disabled] { opacity: 0.45; cursor: not-allowed; }
 .lo-step:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 .lo-step-n { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid currentColor; font-size: 13px; }
+.lo-pick-precincts { font-size: 13px; color: var(--primary-color); font-weight: 600; }
