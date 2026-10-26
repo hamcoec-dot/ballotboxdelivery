@@ -56,6 +56,40 @@ async function refreshStopStatus(electionId, locationKey) {
   await db.doc(`elections/${electionId}/stop_status/${locationKey}`).set(fields || clear, { merge: true });
 }
 
+// Admin: rebuild every stop's delivered status for one election from its live delivery records. Fills in
+// stops delivered before the shared status existed, and repairs any drift. Adds and corrects the
+// delivered_* fields only: never deletes a record and never touches whose truck a stop is on.
+exports.rebuildStopStatus = onCall({ timeoutSeconds: 120 }, async (req) => {
+  await requireAdmin(req);
+  const electionId = str((req.data || {}).electionId, 40, 'electionId');
+  const eref = db.doc(`elections/${electionId}`);
+  if (!(await eref.get()).exists) throw new HttpsError('not-found', 'Unknown election.');
+  const [dSnap, sSnap] = await Promise.all([
+    db.collection('deliveries').where('election_id', '==', electionId).get(), eref.collection('stop_status').get()
+  ]);
+  const byStop = new Map();
+  dSnap.forEach(x => {
+    const k = x.data().location_key;
+    if (!k) return;
+    if (!byStop.has(k)) byStop.set(k, []);
+    byStop.get(k).push({ id: x.id, data: x.data() });
+  });
+  const writer = db.bulkWriter();
+  let delivered = 0, cleared = 0;
+  byStop.forEach((records, k) => {
+    const f = deliveredFields(records);
+    if (f) { delivered++; writer.set(eref.collection('stop_status').doc(k), f, { merge: true }); }
+  });
+  sSnap.forEach(x => {
+    if (x.data().delivery_id && !deliveredFields(byStop.get(x.id) || [])) {
+      cleared++;
+      writer.set(x.ref, Object.fromEntries(DELIVERED_FIELDS.map(k => [k, FieldValue.delete()])), { merge: true });
+    }
+  });
+  await writer.close();
+  return { delivered, cleared };
+});
+
 // ---------------------------------------------------------------- importElection
 async function deleteCollection(ref) {
   const docs = await ref.listDocuments();

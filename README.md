@@ -123,7 +123,7 @@ Every driver sees, live, which stops are delivered and which are on another driv
 
 - **Delivered means a chain of custody record exists.** There is no way to mark a stop delivered by hand. A delivery recorded offline counts on that phone right away and for everyone once it syncs.
 - The status lives in `elections/{electionId}/stop_status/{locationKey}`: `truck_uid/truck_name/truck_at` (written by drivers, who can only set or clear their own flag; admins can clear any) and `delivered_at/delivered_by/delivery_id` (written only by `submitDelivery`, and recomputed when an admin moves, deletes or restores a record). It holds no seal numbers, photos or GPS. Drivers still cannot read `deliveries`.
-- **Clear test data** also clears this status for the election.
+- **Clear test data** also clears this status for the election. Opening the admin dashboard runs `rebuildStopStatus`, which fills in delivered status from the live records (it only adds or corrects `delivered_*`, never deletes records or truck flags).
 - The load (picks and chosen order) is also kept in `localStorage` so it works with no signal; when the phone reaches the server, the shared status wins.
 
 ### Delivery Monitoring dashboard (Admin)
