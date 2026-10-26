@@ -51,7 +51,7 @@ The application is linked to Firebase project **`ballotboxdelivery`**:
 ### Scanning tips for drivers
 - Hold the phone 15-25 cm away, barcode level inside the box. Tap the video to refocus.
 - Dark: turn on the Light button (Android). Glare: tilt the seal so the light does not bounce into the lens.
-- Still not locking on: **Scan from Photo** uses the phone's own camera (flash and autofocus), or type the number.
+- Still not locking on: **Scan from Photo** uses the phone's own camera (flash and autofocus), or type the number. The photo can be at any angle; get close enough that the seal fills a good part of the picture. Reading takes up to a few seconds while it tries turned and zoomed-in views.
 - Test sheet with fake seals: `tools/test-seals.html`.
 
 ## 🔑 Managing Admins
