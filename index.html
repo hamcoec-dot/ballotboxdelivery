@@ -93,9 +93,14 @@
 
         <div id="dayChips" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;"></div>
 
-        <button type="button" class="btn btn-outline" style="margin-bottom: 16px;" onclick="openLoadout()" aria-label="Open the truck loadout list for a delivery day">
-          <span aria-hidden="true">&#x1F69A;</span> Truck Loadout List
-        </button>
+        <div class="lo-entry">
+          <button type="button" class="btn btn-outline" onclick="openLoadout()" aria-label="Open the truck loadout list for a delivery day">
+            <span aria-hidden="true">&#x1F4CB;</span> Truck Loadout List
+          </button>
+          <button type="button" id="myLoadBtn" class="btn btn-outline" onclick="openLoadout('truck')" aria-label="Open my custom delivery load">
+            <span aria-hidden="true">&#x1F69A;</span> My Load
+          </button>
+        </div>
 
         <div id="pollingPlacesList">
           <!-- Dynamically populated -->
@@ -436,6 +441,7 @@
         listContainer.appendChild(section);
       });
       filterPollingPlaces();
+      if (typeof loadoutUpdateEntryButton === 'function') loadoutUpdateEntryButton();
     }
 
     function buildStopCard(item) {
