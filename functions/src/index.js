@@ -512,3 +512,52 @@ exports.clearTestData = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (r
   if (failedDeletes) throw new HttpsError('internal', `${failedDeletes} records could not be removed. Run Clear test data again.`);
   return { committed: true, election, counts, photosMissing, backupPath };
 });
+
+// ---- Password emails ------------------------------------------------------------------------------
+// Firebase won't let this project change its email text (EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED), so we send the
+// "set your password" email ourselves, from noreply@govotehamiltontn.gov through the commission's mail account (secret SMTP_URL).
+// The link opens the app's own Set your password screen (index.html, ?mode=resetPassword&oobCode=...).
+const { SMTP_URL, mailConfigured, sendMail } = require('./mail');
+const { appResetUrl, passwordEmailText, normEmail, isEmail, tooSoon } = require('./password');
+
+// Sends at most one email per account every two minutes. Returns 'sent', 'throttled', 'no-account' or 'no-mail'.
+async function sendPasswordEmail(email, byAdmin) {
+  if (!mailConfigured()) return 'no-mail';
+  const user = await admin.auth().getUserByEmail(email).catch(() => null);
+  if (!user || user.disabled) return 'no-account';
+  const ref = db.doc(`password_emails/${user.uid}`);
+  const go = await db.runTransaction(async (t) => {
+    const s = await t.get(ref);
+    if (s.exists && tooSoon(s.data().last_at_ms)) return false;
+    t.set(ref, { email, last_at_ms: Date.now(), last_by_admin: !!byAdmin, count: FieldValue.increment(1) }, { merge: true });
+    return true;
+  });
+  if (!go) return 'throttled';
+  const url = appResetUrl(await admin.auth().generatePasswordResetLink(email));
+  const m = passwordEmailText(email, url);
+  await sendMail(email, m.subject, m.text);
+  return 'sent';
+}
+
+// Anyone ("Forgot password?" on the sign-in screen). Always answers the same way, so it can't be used to find
+// out which addresses have accounts.
+exports.requestPasswordEmail = onCall({ secrets: [SMTP_URL], maxInstances: 2 }, async (req) => {
+  const email = normEmail(req.data && req.data.email);
+  if (!isEmail(email)) return { ok: true };
+  const r = await sendPasswordEmail(email, false).catch((e) => { console.warn('password email failed', e.message); return 'error'; });
+  console.info('requestPasswordEmail', { result: r });
+  return { ok: true };
+});
+
+// Admin: send someone a set-password email (new driver accounts, or a driver who is locked out).
+exports.adminSendPasswordEmail = onCall({ secrets: [SMTP_URL] }, async (req) => {
+  const auth = await requireAdmin(req);
+  const email = normEmail(req.data && req.data.email);
+  if (!isEmail(email)) throw new HttpsError('invalid-argument', 'Type a valid email address.');
+  const r = await sendPasswordEmail(email, true);
+  console.info('adminSendPasswordEmail', { by: auth.uid, email, result: r });
+  if (r === 'no-mail') throw new HttpsError('failed-precondition', 'Email sending is not set up yet (secret SMTP_URL).');
+  if (r === 'no-account') throw new HttpsError('not-found', `No active account for ${email}. Add it in Firebase Console > Authentication first.`);
+  if (r === 'throttled') throw new HttpsError('resource-exhausted', `An email went to ${email} in the last two minutes. Wait a moment and try again.`);
+  return { sent: true };
+});
