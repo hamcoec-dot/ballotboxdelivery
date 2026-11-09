@@ -520,10 +520,15 @@ exports.clearTestData = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (r
 const { SMTP_URL, mailConfigured, sendMail } = require('./mail');
 const { appResetUrl, passwordEmailText, normEmail, isEmail, tooSoon } = require('./password');
 
+// Both password-email functions run as their own service account, the only one with Firebase Auth admin
+// rights (roles/firebaseauth.admin, roles/datastore.user, Secret Accessor on SMTP_URL). See README.
+const PASSWORD_SA = 'password-mail@ballotboxdelivery.iam.gserviceaccount.com';
+
 // Sends at most one email per account every two minutes. Returns 'sent', 'throttled', 'no-account' or 'no-mail'.
 async function sendPasswordEmail(email, byAdmin) {
   if (!mailConfigured()) return 'no-mail';
-  const user = await admin.auth().getUserByEmail(email).catch(() => null);
+  const user = await admin.auth().getUserByEmail(email)
+    .catch((e) => { if (e.code === 'auth/user-not-found') return null; throw e; });   // other errors (permissions, outage) must show in the logs
   if (!user || user.disabled) return 'no-account';
   const ref = db.doc(`password_emails/${user.uid}`);
   const go = await db.runTransaction(async (t) => {
@@ -541,7 +546,7 @@ async function sendPasswordEmail(email, byAdmin) {
 
 // Anyone ("Forgot password?" on the sign-in screen). Always answers the same way, so it can't be used to find
 // out which addresses have accounts.
-exports.requestPasswordEmail = onCall({ secrets: [SMTP_URL], maxInstances: 2 }, async (req) => {
+exports.requestPasswordEmail = onCall({ secrets: [SMTP_URL], serviceAccount: PASSWORD_SA, maxInstances: 2 }, async (req) => {
   const email = normEmail(req.data && req.data.email);
   if (!isEmail(email)) return { ok: true };
   const r = await sendPasswordEmail(email, false).catch((e) => { console.warn('password email failed', e.message); return 'error'; });
@@ -550,7 +555,7 @@ exports.requestPasswordEmail = onCall({ secrets: [SMTP_URL], maxInstances: 2 }, 
 });
 
 // Admin: send someone a set-password email (new driver accounts, or a driver who is locked out).
-exports.adminSendPasswordEmail = onCall({ secrets: [SMTP_URL] }, async (req) => {
+exports.adminSendPasswordEmail = onCall({ secrets: [SMTP_URL], serviceAccount: PASSWORD_SA }, async (req) => {
   const auth = await requireAdmin(req);
   const email = normEmail(req.data && req.data.email);
   if (!isEmail(email)) throw new HttpsError('invalid-argument', 'Type a valid email address.');
