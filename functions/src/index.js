@@ -523,7 +523,8 @@ const { appResetUrl, passwordEmailText, normEmail, isEmail, tooSoon } = require(
 // Sends at most one email per account every two minutes. Returns 'sent', 'throttled', 'no-account' or 'no-mail'.
 async function sendPasswordEmail(email, byAdmin) {
   if (!mailConfigured()) return 'no-mail';
-  const user = await admin.auth().getUserByEmail(email).catch(() => null);
+  const user = await admin.auth().getUserByEmail(email)
+    .catch((e) => { if (e.code === 'auth/user-not-found') return null; throw e; });   // other errors (permissions, outage) must show in the logs
   if (!user || user.disabled) return 'no-account';
   const ref = db.doc(`password_emails/${user.uid}`);
   const go = await db.runTransaction(async (t) => {
