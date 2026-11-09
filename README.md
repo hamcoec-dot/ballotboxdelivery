@@ -74,7 +74,7 @@ Password emails come from **Hamilton County Election Commission <noreply@govoteh
 - The functions make a reset link with the Admin SDK, take its one-time code, and email `https://govotehamiltontn.gov/ballotboxdelivery/?mode=resetPassword&oobCode=...`, which opens **Set Your Password** in the app. Links work once and expire in about an hour. One email per account every two minutes (`password_emails` collection, functions only).
 
 **Mail password (Secret Manager, never in git):** secret `SMTP_URL` =
-`smtps://elections%40govotehamiltontn.gov:APP-PASSWORD@smtp.gmail.com:465` (a Gmail app password; `none` turns mail off). The Cloud Functions runtime service account needs **Secret Manager Secret Accessor** on it. Create it before deploying the functions.
+`smtps://elections%40govotehamiltontn.gov:APP-PASSWORD@smtp.gmail.com:465` (a Gmail app password; `none` turns mail off). The two password functions run as their own service account `password-mail@ballotboxdelivery.iam.gserviceaccount.com`, which has `roles/firebaseauth.admin` and `roles/datastore.user` on the project and Secret Accessor on `SMTP_URL`. No other function gets Auth admin rights. Create the secret and the account before deploying these functions.
 
 ---
 
