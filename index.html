@@ -1048,8 +1048,8 @@
     }
 
     // ---- Password emails ----------------------------------------------------------------------
-    // Firebase can't send from our domain on this project, so a Cloud Function emails our own link from
-    // noreply@govotehamiltontn.gov and it opens the Set Your Password screen here.
+    // Firebase Auth sends these through the commission's Gmail account as noreply@govotehamiltontn.gov (custom
+    // SMTP in the Auth settings), and its action URL points here, so the link opens Set Your Password.
     const pageParams = new URLSearchParams(location.search);
     let resetCode = pageParams.get('mode') === 'resetPassword' ? pageParams.get('oobCode') : null;
 
@@ -1074,7 +1074,7 @@
         alertDiv.style.display = 'block';
         return;
       }
-      try { await callFn('requestPasswordEmail', { email }); } catch (e) { /* same message either way */ }
+      try { await firebase.auth().sendPasswordResetEmail(email); } catch (e) { /* same message either way, so it can't reveal which addresses have accounts */ }
       loginInfo('If ' + email + ' has an account, an email from noreply@govotehamiltontn.gov with a link to set your password is on its way. Check spam if it does not arrive in a few minutes.');
     }
 

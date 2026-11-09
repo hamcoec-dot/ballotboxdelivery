@@ -67,15 +67,11 @@ Admins are an allowlist of Firebase Auth UIDs in the Firestore `admins` collecti
 
 ## 🔑 Password emails
 
-Firebase won't let this project change its own email template or sender, so the app sends password emails itself, from **noreply@govotehamiltontn.gov** through the commission's Gmail account:
+Firebase Auth sends password emails from **noreply@govotehamiltontn.gov** through the commission's Gmail account (custom SMTP, set 2026-11-09 with the Identity Toolkit admin API: smtp.gmail.com, port 465, SSL, user elections@govotehamiltontn.gov, a Gmail app password stored only in the Auth settings).
 
 - **Drivers:** type your email on the sign-in screen and tap **Forgot password?**. The answer is the same whether or not the address has an account.
-- **Admins:** dashboard -> **Send Password Email** (new driver accounts, or someone locked out). Add the account in Firebase Console -> Authentication first. Don't use the console's own "Reset password", which still sends from firebaseapp.com.
-- The email links to `https://govotehamiltontn.gov/ballotboxdelivery/?mode=resetPassword&oobCode=...`, which opens **Set Your Password** in the app. Links work once and expire in about an hour. One email per account every two minutes (`password_emails` collection, functions only).
-
-**Mail password (Secret Manager, never in git):** secret `SMTP_URL` =
-`smtps://elections%40govotehamiltontn.gov:APP-PASSWORD@smtp.gmail.com:465` (a Gmail app password; `none` turns mail off).
-The Cloud Functions runtime service account needs **Secret Manager Secret Accessor** on it. Create it before deploying the functions.
+- **Admins:** dashboard -> **Send Password Email**, or Firebase Console -> Authentication -> Users -> Reset password. Both send the same email.
+- The Auth **action URL** is `https://govotehamiltontn.gov/ballotboxdelivery/`, so the link opens **Set Your Password** in this app (`?mode=resetPassword&oobCode=...`) instead of Firebase's hosted page. Links work once and expire in about an hour.
 
 ---
 
