@@ -140,6 +140,19 @@ function loadAdminShell() {
     </div>
 
     <div class="card no-print">
+      <details id="pwCard">
+        <summary>Send Password Email</summary>
+        <p class="adm-note" style="margin: 8px 0 12px;">Emails a link to set a new password, from noreply@govotehamiltontn.gov. Use it for a new driver account or a driver who forgot their password. Drivers can also tap Forgot password? on the sign-in screen. Add new accounts in Firebase Console &gt; Authentication first (the console's own Reset password sends the same email).</p>
+        <div class="form-group">
+          <label for="pwEmail">Account email</label>
+          <input type="email" id="pwEmail" maxlength="254" autocomplete="off" onkeydown="if(event.key==='Enter'){adminPasswordEmail();}">
+        </div>
+        <button type="button" id="btnPwSend" class="btn btn-small btn-secondary" onclick="adminPasswordEmail()">Send password email</button>
+        <div id="pwResult" aria-live="polite" style="margin-top: 12px;"></div>
+      </details>
+    </div>
+
+    <div class="card no-print">
       <details id="clearCard">
         <summary onclick="loadClearCard()">Clear Test Data</summary>
         <p class="adm-note" style="margin: 8px 0 12px;">Use this after a practice run, before real deliveries start. It removes every delivery record, seal check, driver lockout and delivery photo for the election you choose. The imported stop list and seal numbers stay, so drivers can start real deliveries straight away. A backup copy is saved first. It cannot be used on or after election day.</p>
@@ -1269,5 +1282,23 @@ async function setDeleted(id, deleted) {
     await callFn('adminSetDeliveryDeleted', { deliveryId: id, baseEditCount: d.edit_count || 0, deleted, reason: reason.trim() });
   } catch (err) {
     alert(err.code === 'functions/aborted' ? 'This record was changed by someone else. Try again in a moment.' : err.message);
+  }
+}
+
+// ---- Send Password Email ------------------------------------------------------------------------
+async function adminPasswordEmail() {
+  const email = document.getElementById('pwEmail').value.trim();
+  const out = document.getElementById('pwResult');
+  const btn = document.getElementById('btnPwSend');
+  if (!email) { out.innerHTML = '<div class="alert alert-danger" role="alert">Type the account email first.</div>'; return; }
+  btn.disabled = true;
+  out.textContent = 'Sending...';
+  try {
+    await firebase.auth().sendPasswordResetEmail(email);
+    out.innerHTML = `<div class="alert alert-success" role="status">Sent. If ${escapeHtml(email)} has an account, an email from noreply@govotehamiltontn.gov is on its way. The link works once and expires in about an hour.</div>`;
+  } catch (err) {
+    out.innerHTML = `<div class="alert alert-danger" role="alert">Not sent: ${escapeHtml(err.code === 'auth/user-not-found' ? 'no account with that email. Add it in Firebase Console > Authentication first.' : err.message)}</div>`;
+  } finally {
+    btn.disabled = false;
   }
 }
