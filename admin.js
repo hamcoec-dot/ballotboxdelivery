@@ -142,7 +142,7 @@ function loadAdminShell() {
     <div class="card no-print">
       <details id="pwCard">
         <summary>Send Password Email</summary>
-        <p class="adm-note" style="margin: 8px 0 12px;">Emails a link to set a new password, from noreply@govotehamiltontn.gov. Use it for a new driver account or a driver who forgot their password. Drivers can also tap Forgot password? on the sign-in screen. Add new accounts in Firebase Console &gt; Authentication first (the console's own Reset password sends the same email).</p>
+        <p class="adm-note" style="margin: 8px 0 12px;">Emails a link to set a new password, from noreply@govotehamiltontn.gov. Use it for a new driver account or a driver who forgot their password. Drivers can also tap Forgot password? on the sign-in screen. Add new accounts in Firebase Console &gt; Authentication first (don't use the console's own Reset password: it sends Firebase's stock text).</p>
         <div class="form-group">
           <label for="pwEmail">Account email</label>
           <input type="email" id="pwEmail" maxlength="254" autocomplete="off" onkeydown="if(event.key==='Enter'){adminPasswordEmail();}">
@@ -1294,10 +1294,10 @@ async function adminPasswordEmail() {
   btn.disabled = true;
   out.textContent = 'Sending...';
   try {
-    await firebase.auth().sendPasswordResetEmail(email);
-    out.innerHTML = `<div class="alert alert-success" role="status">Sent. If ${escapeHtml(email)} has an account, an email from noreply@govotehamiltontn.gov is on its way. The link works once and expires in about an hour.</div>`;
+    await callFn('adminSendPasswordEmail', { email });
+    out.innerHTML = `<div class="alert alert-success" role="status">Password email sent to ${escapeHtml(email)} from noreply@govotehamiltontn.gov. The link works once and expires in about an hour.</div>`;
   } catch (err) {
-    out.innerHTML = `<div class="alert alert-danger" role="alert">Not sent: ${escapeHtml(err.code === 'auth/user-not-found' ? 'no account with that email. Add it in Firebase Console > Authentication first.' : err.message)}</div>`;
+    out.innerHTML = `<div class="alert alert-danger" role="alert">Not sent: ${escapeHtml(err.message)}</div>`;
   } finally {
     btn.disabled = false;
   }
