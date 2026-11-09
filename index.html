@@ -62,6 +62,29 @@
         <button type="button" class="btn" onclick="appLogin()" aria-label="Sign into ballot box custody app">
           Sign In
         </button>
+        <button type="button" class="btn btn-small btn-outline" style="margin-top: 16px;" onclick="forgotPassword()">Forgot password?</button>
+        <div id="loginInfo" class="alert alert-success" style="display: none; margin: 16px 0 0;" role="status"></div>
+      </div>
+    </section>
+
+    <!-- SET YOUR PASSWORD (opened from the link in a password email: ?mode=resetPassword&amp;oobCode=...) -->
+    <section id="viewSetPassword" class="view-section">
+      <div class="card">
+        <h1 class="card-title">Set Your Password</h1>
+        <p id="spIntro" style="margin-bottom: 16px;" role="status">Checking your link...</p>
+        <div id="spAlert" class="alert alert-danger" style="display: none;" role="alert"></div>
+        <div id="spFields" hidden>
+          <div class="form-group">
+            <label for="spPass">New password (at least 8 characters)</label>
+            <input type="password" id="spPass" autocomplete="new-password" minlength="8">
+          </div>
+          <div class="form-group">
+            <label for="spPass2">Type it again</label>
+            <input type="password" id="spPass2" autocomplete="new-password" minlength="8" onkeydown="if(event.key==='Enter'){saveNewPassword();}">
+          </div>
+          <button type="button" id="spSave" class="btn" onclick="saveNewPassword()">Save Password</button>
+        </div>
+        <button type="button" class="btn btn-small btn-outline" style="margin-top: 16px;" onclick="leaveSetPassword()">Back to Sign In</button>
       </div>
     </section>
 
@@ -247,7 +270,9 @@
     // Initialize Auth Listener
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof firebase !== 'undefined') {
+        if (resetCode) startSetPassword();
         firebase.auth().onAuthStateChanged((user) => {
+          if (user && resetCode) { firebase.auth().signOut(); return; }   // a password link signs out whoever was here
           if (user) {
             currentAccount = user;
             document.getElementById('userEmailText').textContent = user.email;
@@ -263,6 +288,11 @@
                 return loadAdminModule().then(() => { isAdminUser = true; showView('viewAdmin'); initAdmin(); });
               })
               .catch((err) => { console.warn('Admin view unavailable:', err); showView('viewElections'); }); // fail closed
+          } else if (resetCode) {
+            currentAccount = null;
+            isAdminUser = false;
+            document.getElementById('userBadge').style.display = 'none';
+            showView('viewSetPassword');
           } else {
             currentAccount = null;
             isAdminUser = false;
@@ -1015,6 +1045,96 @@
           alertDiv.textContent = 'Authentication failed: ' + err.message;
           alertDiv.style.display = 'block';
         });
+    }
+
+    // ---- Password emails ----------------------------------------------------------------------
+    // Firebase can't send from our domain on this project, so a Cloud Function emails our own link from
+    // noreply@govotehamiltontn.gov and it opens the Set Your Password screen here.
+    const pageParams = new URLSearchParams(location.search);
+    let resetCode = pageParams.get('mode') === 'resetPassword' ? pageParams.get('oobCode') : null;
+
+    function loginInfo(msg) {
+      const el = document.getElementById('loginInfo');
+      el.textContent = msg;
+      el.style.display = msg ? 'flex' : 'none';
+    }
+
+    async function forgotPassword() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const alertDiv = document.getElementById('loginAlert');
+      alertDiv.style.display = 'none';
+      loginInfo('');
+      if (!email) {
+        alertDiv.textContent = 'Type your email address above first, then tap Forgot password?';
+        alertDiv.style.display = 'block';
+        return;
+      }
+      if (!navigator.onLine) {
+        alertDiv.textContent = 'You are offline. Connect to the internet and try again.';
+        alertDiv.style.display = 'block';
+        return;
+      }
+      try { await callFn('requestPasswordEmail', { email }); } catch (e) { /* same message either way */ }
+      loginInfo('If ' + email + ' has an account, an email from noreply@govotehamiltontn.gov with a link to set your password is on its way. Check spam if it does not arrive in a few minutes.');
+    }
+
+    function spError(msg) {
+      const el = document.getElementById('spAlert');
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    function clearResetFromUrl() {
+      resetCode = null;
+      history.replaceState(null, '', location.pathname);
+    }
+
+    async function startSetPassword() {
+      document.getElementById('spFields').hidden = true;
+      spError('');
+      showView('viewSetPassword');
+      try {
+        const email = await firebase.auth().verifyPasswordResetCode(resetCode);
+        document.getElementById('spIntro').textContent = 'Choose a new password for ' + email + '.';
+        document.getElementById('loginEmail').value = email;
+        document.getElementById('spFields').hidden = false;
+        document.getElementById('spPass').focus();
+      } catch (e) {
+        document.getElementById('spIntro').textContent = '';
+        spError(e && e.code === 'auth/network-request-failed'
+          ? 'You are offline. Connect to the internet and open the link again.'
+          : 'That link has expired or was already used. Go back to Sign In, type your email and tap Forgot password? for a new one.');
+      }
+    }
+
+    async function saveNewPassword() {
+      const a = document.getElementById('spPass').value;
+      const b = document.getElementById('spPass2').value;
+      spError('');
+      if (a.length < 8) return spError('Use at least 8 characters.');
+      if (a !== b) return spError('The two passwords do not match.');
+      const btn = document.getElementById('spSave');
+      btn.disabled = true;
+      try {
+        await firebase.auth().confirmPasswordReset(resetCode, a);
+        document.getElementById('spPass').value = document.getElementById('spPass2').value = '';
+        clearResetFromUrl();
+        showView('viewLogin');
+        loginInfo('Password saved. Sign in with your new password.');
+        document.getElementById('loginPassword').focus();
+      } catch (e) {
+        spError(e && e.code === 'auth/weak-password' ? 'Pick a longer password.'
+          : e && (e.code === 'auth/expired-action-code' || e.code === 'auth/invalid-action-code') ? 'That link has expired or was already used. Go back to Sign In and tap Forgot password? for a new one.'
+          : 'Could not save the password: ' + (e && e.message));
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function leaveSetPassword() {
+      clearResetFromUrl();
+      spError('');
+      showView('viewLogin');
     }
 
     function appLogout() {
